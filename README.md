@@ -1,8 +1,11 @@
 # FINALIZER
 
 A final layer for drone material: not matching someone else's record, but fitting
-an **admissible region** — a meta. The meta is derived from what physically
-survives on playback devices, and checked against a catalogue.
+an **admissible region** — a meta.
+
+The meta is a design of perception, not a measurement of taste. It is derived
+from what physically survives on playback devices — limiter headroom, cone
+excursion, codec pre-echo — and checked against a catalogue.
 
 ![Choosing a file](docs/picker.png)
 
