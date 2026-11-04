@@ -38,7 +38,7 @@ eq_peak = [1000.0, 4.5, 0.4]
 # is removed by loudness normalisation -- what survives is the part that did
 # not. max_eq 12 gives a +5.8 dB bell, max_eq 9 gives +3.3.
 # Unlike [mid] this depends on the track's own contour: on dark material it
-# also lifts the air (+13 dB at 10 kHz on T5).
+# also lifts the air (+13 dB at 10 kHz on a dark drone piece).
 meta = "drone"
 crest = 0.8
 bass = 0.7

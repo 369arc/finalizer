@@ -178,7 +178,7 @@ envelope**:
 
 Crest control cuts only the upper tail, above `P75 + meta`, so `P75` does not
 change by construction. The report says exactly that: `contour preserved`.
-On `FELT FEATHER` the body deviation is ≤ 1.5 dB RMS, LRA 3.56 → 3.66.
+On a static drone the body deviation is ≤ 1.5 dB RMS, LRA 3.56 → 3.66.
 
 Shape fitting is switched on explicitly: `--fit-contour` (or `--target REF`,
 where the reference is by definition the picture you asked for).
@@ -250,8 +250,8 @@ summary:
       high  15.98   4.49   9.76  -2.60     0    5.2
 ```
 
-On dark material `high` lifts the air: on T5 +5.7 dB at 1 kHz and **+13.2 dB
-at 10 kHz**. That is not a defect but a direct consequence of the track sitting
+On dark material `high` lifts the air: on one dark drone piece +5.7 dB at 1 kHz
+and **+13.2 dB at 10 kHz**. That is not a defect but a direct consequence of the track sitting
 far below the speech curve up top. If the top is not wanted, take `mid`.
 
 **`mid` versus `high`.** `mid` is a fixed bell: the same correction on any
@@ -260,8 +260,8 @@ the contour, subtracts the speech curve (LTASS) and applies the difference in on
 pass (`--one-shot`), with a `max_eq` ceiling.
 
 Single-pass is not an optimisation here but a condition: with iterations the loop
-oscillates, and at full pull the result annihilates itself (on T2 +0.8 dB
-remained instead of +5.8).
+oscillates, and at full pull the result annihilates itself (on a bright, dense
+piece +0.8 dB remained instead of +5.8).
 
 Strength is governed by **`max_eq`, not `pull`**: the difference hits the ceiling
 at both edges, the constant part is removed by normalisation, and what comes out
@@ -302,8 +302,8 @@ One filter, linear, static. It generates no harmonics and does not touch the
 meta boundary: a static equaliser changes a band's level, not its crest.
 
 Important: the bell sits **after** the crest stage. Placed before it, it distorts
-the crest measurement — in a run on T5 the 7.7–15 kHz band slipped out of
-control because of it (12.4 against a ceiling of 9.5).
+the crest measurement — in one run the 7.7–15 kHz band slipped out of control
+because of it (12.4 against a ceiling of 9.5).
 
 Everything that was saturation — `--sat*`, `--wave-drive`, `--peak-drive`,
 `--crest-until`, the `mid`/`high`/`push` profiles — is gone. The numbers for the

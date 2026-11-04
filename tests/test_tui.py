@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 import tui  # noqa: E402
 
 _TMP = Path(tempfile.mkdtemp(prefix="fin_tui_test_"))
-SRC = _TMP / "T2.wav"
+SRC = _TMP / "track.wav"
 _t = np.arange(48000) / 48000
 sf.write(SRC, np.stack([0.2 * np.sin(2 * np.pi * 220 * _t)] * 2, axis=1), 48000)
 
@@ -34,7 +34,7 @@ def fake_run(cmd, **kw):
 
 
 async def main():
-    assert tui.out_path(SRC, "mid").name == "CHIRO_mid.wav"
+    assert tui.out_path(SRC, "mid").name == "track_mid.wav"
     print("1. naming ok")
 
     tui.subprocess.run = fake_run
@@ -85,9 +85,9 @@ async def main():
         for _ in range(40):
             await pilot.pause()
             names = [str(ch.label) for ch in tree.root.children]
-            if "CHIRO_mid.wav" in names:
+            if "track_mid.wav" in names:
                 break
-        assert "CHIRO_mid.wav" in names, names
+        assert "track_mid.wav" in names, names
         print("5. done: Master is back, output is in the tree")
 
         cur = getattr(getattr(tree.cursor_node, "data", None), "path", None)
