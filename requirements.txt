@@ -1,0 +1,7 @@
+# audio engine
+numpy
+scipy
+soundfile
+
+# minimal interface (only needed for tui.py)
+textual

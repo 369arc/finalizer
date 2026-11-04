@@ -1,0 +1,27 @@
+# results and working files, never part of the tool
+out/
+logs/
+listen/
+
+# audio in, audio out
+*.wav
+*.flac
+*.mp3
+*.aif
+*.aiff
+*.m4a
+*.ogg
+*.opus
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# editors / os
+*.bak
+*.bak.*
+.DS_Store
+
+# kept locally, never pushed
+README.ru.md
