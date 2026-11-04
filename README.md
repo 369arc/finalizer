@@ -14,6 +14,29 @@ in the list.
 
 ## Installation
 
+The quick way:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/369arc/finalizer/main/install.sh | sh
+```
+
+It checks python3 (3.11+) and ffmpeg, creates a private environment in
+`~/.local/share/finalizer`, downloads the application and puts the `finalizer`
+command into `~/.local/bin`. Nothing is installed system-wide: everything lives
+in one directory, and `install.sh --uninstall` removes it.
+
+```bash
+finalizer            # the interface
+finalizer run ...    # the CLI, e.g. finalizer run master SRC.wav --out OUT.wav
+finalizer update     # fetch the latest main
+finalizer path       # where it is installed
+```
+
+The script is plain POSIX shell — read it before piping if you prefer
+(`curl -fsSL ... | less`), then run `sh install.sh` from the checkout.
+
+### By hand
+
 Python 3.11+ and **ffmpeg**. ffmpeg is not used for processing, only for input:
 anything that is not 48 kHz / stereo / float is converted once
 (`finalizer/ingest.py`). Without ffmpeg the program still runs, but opens only
