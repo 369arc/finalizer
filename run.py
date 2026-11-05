@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """FINALIZER -- reference-state mastering for drone material.
 
-  meta     [--name drone]              print the admissible region
+  meta     [--name drone-standard]     print the admissible region
   analyse  FILE...                     measure contour, width, crest, resonances
   check    FILE...                     how far the balance moves on real devices
   compare  A B                         state difference A -> B
-  master   SRC --meta drone --out OUT  bring SRC inside the meta
+  master   SRC --meta drone-standard --out OUT  bring SRC inside the meta
   master   SRC --target REF --out OUT  ...or onto a measured reference
 """
 import argparse
@@ -20,7 +20,10 @@ from finalizer import dsp, measure, chain, meta as metamod, devices, ingest
 
 
 def cmd_meta(a):
-    m = metamod.DRONE if a.name == "drone" else None
+    m = metamod.get(a.name)
+    if m is None:
+        raise SystemExit(f"unknown meta: {a.name} "
+                         f"(available: {', '.join(sorted(metamod.META_REGISTRY))})")
     print(metamod.table(m))
     print()
     for k, v in metamod.NOTES.items():
@@ -29,14 +32,17 @@ def cmd_meta(a):
 
 
 def cmd_analyse(a):
+    m = metamod.get(a.meta)
+    if m is None:
+        raise SystemExit(f"unknown meta: {a.meta}")
     for p in a.files:
         x, _ = measure.load(ingest.ingest(p)[0])
         f = measure.features(x)
         print(measure.summary(f, p))
         if a.crest:
-            cr = measure.band_crest(x, np.array(metamod.DRONE["crest_edges"]))
+            cr = measure.band_crest(x, np.array(m["crest_edges"]))
             print("    crest by octave: " + " ".join(
-                f"{e:.0f}:{v:.1f}" for e, v in zip(metamod.DRONE["crest_edges"], cr)))
+                f"{e:.0f}:{v:.1f}" for e, v in zip(m["crest_edges"], cr)))
         if a.json_dir:
             import os
             name = os.path.splitext(os.path.basename(p))[0]
@@ -48,16 +54,19 @@ def cmd_analyse(a):
 
 
 def cmd_check(a):
+    m = metamod.get(a.meta)
+    if m is None:
+        raise SystemExit(f"unknown meta: {a.meta}")
     for p in a.files:
         x, _ = measure.load(ingest.ingest(p)[0])
         f = measure.features(x)
         print(f"  {p}")
         print(f"    LUFS {f['lufs']:.2f}  TP {f['tp']:.2f}  corr<100Hz {f['corr_low']:+.2f}")
-        text, _ = devices.report(x, metamod.DRONE)
+        text, _ = devices.report(x, m)
         print(text)
-        cr = measure.band_crest(x, np.array(metamod.DRONE["crest_edges"]))
-        bad = [(e, v, mx) for e, v, mx in zip(metamod.DRONE["crest_edges"],
-                                              cr, metamod.DRONE["crest_max"])
+        cr = measure.band_crest(x, np.array(m["crest_edges"]))
+        bad = [(e, v, mx) for e, v, mx in zip(m["crest_edges"],
+                                              cr, m["crest_max"])
                if not np.isnan(v) and v > mx + 0.35]
         if bad:
             print("    over meta crest: " + ", ".join(
@@ -101,10 +110,18 @@ def cmd_master(a):
     if float(np.abs(x).max()) < 1e-6:
         raise SystemExit(f"{a.src}: the file is silent -- nothing to master")
 
+    # The meta is the boundary; a target only supplies the picture.  Resolve
+    # it once so the target branch does not silently fall back to legacy DRONE.
+    meta_name = a.meta or metamod.DEFAULT_META
+    base_meta = metamod.get(meta_name)
+    if base_meta is None:
+        raise SystemExit(f"unknown meta: {meta_name} "
+                         f"(available: {', '.join(sorted(metamod.META_REGISTRY))})")
+
     # an explicit target beats a profile's meta: the profile says "drone" by
     # default, but a file on the command line is a decision, not a default
     if a.meta and not (a.target or a.target_json):
-        m = metamod.DRONE
+        m = base_meta
         tgt = metamod.as_target(m)
         tname = f"meta:{m['name']}"
         lufs_t = a.lufs if a.lufs is not None else m["lufs"]
@@ -140,12 +157,12 @@ def cmd_master(a):
         # absolutes and crest ceilings fall back to the meta when the target
         # file does not carry them
         lufs_t = a.lufs if a.lufs is not None else tgt.get(
-            "lufs", metamod.DRONE["lufs"])
+            "lufs", base_meta["lufs"])
         deadband = a.deadband or 0.0
         mono_below = (a.mono_below if a.mono_below is not None
-                      else tgt.get("mono_below", metamod.DRONE["mono_below"]))
-        crest_edges = tgt.get("crest_edges", metamod.DRONE["crest_edges"])
-        crest_max = tgt.get("crest_max", metamod.DRONE["crest_max"])
+                      else tgt.get("mono_below", base_meta["mono_below"]))
+        crest_edges = tgt.get("crest_edges", base_meta["crest_edges"])
+        crest_max = tgt.get("crest_max", base_meta["crest_max"])
         crest_from_target = "crest_max" in tgt
         fit = True if a.fit_contour is None else a.fit_contour
 
@@ -185,6 +202,12 @@ def cmd_master(a):
              eq_peak=a.eq_peak,
              ceiling=a.ceiling,
              lookahead=a.lookahead, release=a.release, lufs=lufs_t)
+
+    # Report the ceilings that are actually applied (after crest/bass/sub),
+    # not the raw meta before the profile multipliers.
+    if p.get("crest_max") is not None:
+        crest_max = np.asarray(p["crest_max"], dtype=float)
+        crest_edges = np.asarray(p["crest_edges"], dtype=float)
 
     sc_src = measure.sustain_contour(x, tgt["centers"], tgt["edges"])
 
@@ -271,7 +294,7 @@ def cmd_master(a):
         print("  removed: " + ", ".join(f"{hz:.0f}Hz{g:+.1f}" for hz, (g, q) in
                                         res["info"]["notches"].items()))
     print()
-    text, tdev = devices.report(y, metamod.DRONE)
+    text, tdev = devices.report(y, base_meta)
     print(text)
     yd = y.astype(np.float64)
     rms = float(np.sqrt(np.mean(yd ** 2)))
@@ -392,7 +415,10 @@ def cmd_variants(a):
     import os
     src, _tmp = ingest.ingest(a.src)
     x, sr = measure.load(src)
-    m = metamod.DRONE
+    m = metamod.get(a.meta)
+    if m is None:
+        raise SystemExit(f"unknown meta: {a.meta} "
+                         f"(available: {', '.join(sorted(metamod.META_REGISTRY))})")
     tgt = metamod.as_target(m)
     lufs_t = a.lufs if a.lufs is not None else m["lufs"]
     deadband = 0.0
@@ -553,17 +579,19 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     q = sub.add_parser("meta")
-    q.add_argument("--name", default="drone")
+    q.add_argument("--name", default=metamod.DEFAULT_META)
     q.set_defaults(func=cmd_meta)
 
     q = sub.add_parser("analyse")
     q.add_argument("files", nargs="+")
     q.add_argument("--json-dir", default=None)
     q.add_argument("--crest", action="store_true")
+    q.add_argument("--meta", default=metamod.DEFAULT_META)
     q.set_defaults(func=cmd_analyse)
 
     q = sub.add_parser("check")
     q.add_argument("files", nargs="+")
+    q.add_argument("--meta", default=metamod.DEFAULT_META)
     q.set_defaults(func=cmd_check)
 
     q = sub.add_parser("compare")
@@ -573,7 +601,7 @@ def main(argv=None):
 
     q = sub.add_parser("variants")
     q.add_argument("src")
-    q.add_argument("--meta", default="drone")
+    q.add_argument("--meta", default=metamod.DEFAULT_META)
     q.add_argument("--grid", nargs="*", default=None,
                    help="e.g. crest=0.8,0.9 bass=0.7,1.0")
     q.add_argument("--out-dir", required=True)
@@ -590,6 +618,9 @@ def main(argv=None):
     q.add_argument("--sub-hz", type=float, default=90.0)
     q.add_argument("--mid-guard", type=float, default=None,
                    help="max broad deviation in 240-4000 Hz, dB (None = off)")
+    q.add_argument("--eq-peak", type=float, nargs=3, default=None,
+                   metavar=("HZ", "DB", "Q"),
+                   help="one broad bell applied before everything, e.g. 1000 4.5 0.4")
     q.add_argument("--crest", type=float, default=1.0,
                    help="base crest scale when the grid does not set it")
     q.add_argument("--bass", type=float, default=1.0,

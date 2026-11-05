@@ -59,9 +59,42 @@ DRONE = {
     "mono_below": MONO_BELOW,
 }
 
+# Calibrated 2026.1 candidates, model-based, no catalogue.
+#
+# 75 dB SPL is the "standard" reference; 85 dB SPL is the "safe" reference.
+# Only the codec-driven high bands move: 7.7-15 kHz is the one band the model
+# supports tightening at 75 dB SPL; 15-20 kHz stays open for standard and is
+# protected only in safe.
+CREST_MAX_STANDARD = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
+CREST_MAX_SAFE = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 5.0]
+
+DRONE_STANDARD = dict(DRONE, name="drone-standard",
+                      crest_max=CREST_MAX_STANDARD)
+DRONE_SAFE = dict(DRONE, name="drone-safe",
+                  crest_max=CREST_MAX_SAFE)
+
+META_REGISTRY = {
+    "drone": DRONE,
+    "drone-standard": DRONE_STANDARD,
+    "drone-safe": DRONE_SAFE,
+}
+
+# The calibrated default: 7.7-15 kHz = 8.0 dB, confirmed by two blind
+# listening passes: one where standard and safe were identical, and one where
+# the 8.0 dB change actually engaged and was clearly preferred over legacy 9.5.
+# drone-safe remains available for loud/dense playback; its 15-20 kHz cut is
+# not yet confirmed by listening.
+DEFAULT_META = "drone-standard"
+
+
+def get(name="drone"):
+    """Return a named meta, or None if unknown."""
+    return META_REGISTRY.get(name)
+
 NOTES = {
-    "crest_max": "6.2 dB below ~2 kHz: limiter headroom and cone excursion. "
-                 "Rises to 10.3 dB at 17 kHz, where codec pre-echo is the limit.",
+    "crest_max": "Device limiter/excursion headroom below ~2 kHz; above it "
+                 "the lossy-codec pre-echo limit. Calibrated candidates: "
+                 "drone-standard (75 dB SPL) and drone-safe (85 dB SPL).",
     "crest_min": "2.5-5 dB. Below this a band is static, not dynamic.",
     "lufs": "-14 LUFS: streaming normalises here; louder buys nothing.",
     "tp": "-1 dBTP, measured at 4x oversampling, not sample peak.",

@@ -99,10 +99,11 @@ Both tests work only in temporary directories and never touch your files.
 python3 run.py master SRC.wav --out OUT.wav
 ```
 
-All three profiles sit on the same working point: `crest 0.8`, `bass 0.7`
-(< 240 Hz), `mid_guard 4.0` (240–4000 Hz) — chosen by ear. They differ only in
-density: `low` / `mid` / `high` (see "Profiles"). Without a profiles file the
-render is neutral.
+All three profiles sit on the meta boundary: `crest 1.0`, `bass 1.0`
+(< 240 Hz), `mid_guard 4.0` (240–4000 Hz). They differ only in density:
+`low` / `mid` / `high` (see "Profiles"). The older, tighter `crest 0.8 /
+bass 0.7` can still be requested on the command line. Without a profiles file
+the render is neutral.
 
 ```
 run.py meta                      # what the meta is and where the numbers come from
@@ -134,6 +135,12 @@ high crest into pre-echo.
 | 3840–7680 | 8.3 | pre-echo |
 | 7680–15360 | 9.5 | |
 | 15360–20000 | 10.3 | plenty of air, no real limit |
+
+> **2026.1 calibration.** The default is now `drone-standard`: **7.7–15 kHz =
+> 8.0 dB** (confirmed by two blind listening passes), **15–20 kHz = 10.3 dB**.
+> The table above is the legacy `drone` boundary; `python3 run.py meta` prints
+> the active one. `drone-safe` keeps 15–20 kHz at 5.0 dB for loud/dense
+> playback; that upper-band cut is still awaiting a clean listening test.
 
 **2. Crest floor.** 2.5 → 5 dB on the same bands. Below that it is no longer
 mastering, it is squashing.
@@ -275,13 +282,14 @@ measured, and the result reduced to a single filter — 0.44 dB rms across bands
 above the meta, `phone` is the balance shift on a phone.
 
 `--crest` scales the ceiling everywhere (control), `--bass` only below `bass_hz`
-(the body). The ear chose `crest 0.8 / bass 0.7` four times out of four:
-LRA 8.65 versus 8.26 at a global 0.8 — the top keeps its dynamics, the low end
-becomes solid. Any CLI flag overrides the profile; an axis named in a `variants`
-grid replaces the profile value for that axis only.
+(the body). Earlier tests chose `crest 0.8 / bass 0.7`; the 2026.1 listening test
+preferred the full boundary (`1.0 / 1.0`): more open, more space, more alive.
+The default profiles now sit at the boundary. Any CLI flag overrides the
+profile; an axis named in a `variants` grid replaces the profile value for that
+axis only.
 
-Important: this is one track's preference, not a law. The file is text and is
-edited for the material — that is exactly how it should be used.
+Important: this is a preference, not a law. The file is text and is edited for
+the material — that is exactly how it should be used.
 
 ## Presence instead of saturation
 
