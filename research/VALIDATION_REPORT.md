@@ -37,7 +37,7 @@ These were performed read-only on the five finished masters and on synthetic sig
 | V1 | gain invariance: `x` vs `2x` | B shifts `+6.0206 dB`, C changes `0.000000 dB` | **PASS** |
 | V2 | integrated loudness vs `ffmpeg ebur128` | within `0.05 dB` on 1 kHz sine, T2, T4, two masters | **PASS** |
 | V3 | true peak vs `ffmpeg` on real programme | within `0.03 dB` on T2/T4 and the masters | **PASS** |
-| V4 | true peak vs `ffmpeg` on HF sines | code under-reads by `0.49–0.52 dB` at 12/19 kHz and fs/4 | **FAIL (worst case)** |
+| V4 | true peak vs `ffmpeg` on HF sines | code differs by `0.49–0.52 dB`; Annex 2 filter gives ~0.2 dB at 19 kHz, so the difference is meter-dependent | **METER DIFFERENCE** |
 | V5 | crest gate on a 50 dB, 0.5 s burst | `band_crest = 0.38 dB`; 0.1–0.3 s bursts → `NaN` | **FAIL (critical)** |
 | V6 | `NaN` decision | `check`/`master` treat `NaN` as `ok` | **FAIL (critical)** |
 | V7 | floor `F_b` | `crest_min` is never read by a stage or a check | **FAIL (not implemented)** |
@@ -99,7 +99,7 @@ On worst-case high-frequency signals:
 | 12 kHz, 0 dBFS | 0.006 | 0.500 | −0.494 |
 | fs/4, 45° | 0.115 | 0.600 | −0.485 |
 
-The code uses `resample_poly`, not the BS.1770-4 Annex 2 48-tap/4-phase FIR. On real music the difference is small; on synthetic HF content it is ~0.5 dB. A master trimmed with the code’s meter can read ~0.5 dB higher on a different meter. The `−1 dBTP` target must name the meter and include a tolerance, or the code must implement the Annex 2 filter.
+The code uses `resample_poly`, not the BS.1770-4 Annex 2 48-tap/4-phase FIR. On real music the difference is small; on synthetic HF content it is ~0.5 dB. The Annex 2 filter itself gives `0.20 dB` on the 19 kHz sine where ffmpeg gives `0.80 dB`, so the disagreement is between meters, not a simple error in the code. A master trimmed with the code’s meter can still read ~0.5 dB higher on a different meter, so the meter must be named and a tolerance used. The `−1 dBTP` target must name the meter and include a tolerance, or the code must implement the Annex 2 filter.
 
 ### 2.4 Crest gate (V5)
 
