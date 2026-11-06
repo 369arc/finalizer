@@ -49,6 +49,10 @@ The five finished masters are not a validation corpus. They are used here to tes
 
 ## 2. Executive summary
 
+> The findings below describe commit `af04531`. The production fixes that
+> followed are recorded in `VALIDATION_REPORT.md` §4; read the two together.
+> A fix does not erase the finding — it is the reason for the fix.
+
 1. **`K_b` is not measured.** No part of the repository contains a device measurement, an SPL calibration, or a perceptual threshold. The values `6.2 / 7.2 / 8.3 / 8.0 / 10.3` are assumptions or hypotheses. The `75 dB SPL` reference exists only as a comment; the code never converts digital level to SPL.
 2. **The low-band 6.2 dB is the most consequential and the least supported value.** It binds on `T3`, `T5` and `T2` and is applied identically to 30–60, 60–120, 120–240, 240–480, 480–960 and 960–1920 Hz, although the physical mechanisms (excursion, port, thermal compression, limiter) are different.
 3. **The codec rationale for the top bands is not reproduced** at AAC 96/128 kbps or Opus 96 kbps in the tested conditions. The current result is limited to synthetic mono band noise, one encoder implementation, 50 ms bursts and a 20 ms measurement window. It supports “the codec is not the binding constraint in these conditions”; it does not support a general codec law, and it does not establish the top-band numbers.
