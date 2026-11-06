@@ -1,6 +1,6 @@
 """Audit the v1 crest estimator and compare it with the v2 reference.
 
-v1 is `finalizer.measure.band_crest` at commit af04531: 4096/1024, a per-band
+v1 is `finalizer.measure.band_crest` at commit b16188b: 4096/1024, a per-band
 `e > e.max() - 45` gate, and a `top - 45 dB` no-programme gate. v2 is
 `research.metrics`: multi-resolution bands, a broadband activity mask, and a
 reported tail/local/max crest.
@@ -102,7 +102,7 @@ def measure_track(path, do_bootstrap=True):
     E = envelope(x)
     raw = crest_v1(E)
     gated = crest_v1(E, "max45")
-    v1 = measure.band_crest_legacy(x, EDGES)      # the af04531 estimator
+    v1 = measure.band_crest_legacy(x, EDGES)      # the b16188b estimator
     v1_new = measure.band_crest(x, EDGES)         # corrected broadband gate
     if do_bootstrap:
         lo, hi, sd = bootstrap(E)

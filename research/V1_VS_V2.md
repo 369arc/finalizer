@@ -1,8 +1,8 @@
 # v1 vs v2: a technical comparison of the sensor and the mastering chain
 
 **Date:** 2026-11-06
-**v1:** `af04531` — the pre-audit state (materialised with `git archive`; no worktree is kept in the repository).
-**v2:** `90d1a64` (HEAD `main`; the tree was clean at measurement time). The production fix is `d9fc249`; `228b1ef`, `312c1ea` and `90d1a64` changed documentation only.
+**v1:** `b16188b` — the pre-audit state (materialised with `git archive`; no worktree is kept in the repository).
+**v2:** `f621231` (HEAD `main`; the tree was clean at measurement time). The production fix is `64c8a5b`; `f30dfd7`, `74623b0` and `f621231` changed documentation only.
 **Data:** `research/audit/compare_v1_v2.json`. References such as `json:bursts` point to a key in that file. Script: `research/audit/compare_v1_v2.py`.
 **What was done:** measurement only. No audio was written to the repository; renders live in `<work>/renders/`.
 **Corpus labels:** `T1`–`T5` are anonymised corpus items. The mapping to source files is not stored in the repository.
@@ -65,7 +65,7 @@ flowchart LR
   RUN --> REP["report run.py l.305-309<br/>crest_report (v2)"]
 ```
 
-| step | v2 `90d1a64` | v1 `af04531` | role |
+| step | v2 `f621231` | v1 `b16188b` | role |
 |---|---|---|---|
 | command selection | `tui.py:204–210` (`build_cmd`), `tui.py:824` (`subprocess.run`) | same mechanism | the TUI imports neither `finalizer` nor `research` (verified by grep) |
 | entry point | `run.py:143` (`cmd_master`) | `run.py` `cmd_master` | profile, call to `chain.master`, report |
@@ -96,7 +96,7 @@ The research meter (`research/metrics.py`, multi-resolution 16384/8192/4096) is 
 
 `E_b(n)` is the band power in frame `n`, dB. `B_b = P75(E_b)`, `C_b = P99.5(E_b) − P75(E_b)`. Important: v1 and v2 use **different frame populations** for P75 and P99.5.
 
-| quantity | v1 (`af04531`) | v2 (`90d1a64`) |
+| quantity | v1 (`b16188b`) | v2 (`f621231`) |
 |---|---|---|
 | body for the report | P75 over frames `e > max_b(e) − 45` (`measure.py:162`) | P75 over frames of the mask `(E_tot ≥ max(E_tot) − 40) & (E_tot ≥ −70)` |
 | crest for the report | P99.5 − body, same population; `NaN` if `len < 21` or `P75_all < top − 45` | `C_tail` = P99.5 − body over the mask; `UNKNOWN` if frames `< 50` or body `< −70` |
@@ -115,7 +115,7 @@ Correction to the request: the request said v2 computes `C_max = max(E_b[mask]) 
 | `CREST_MAX_CALIBRATED` | present (duplicate) | removed | VERIFIED |
 | `metric_version` | absent | `crest-v1.1-broadband-gate` (a string, not a meta number) | VERIFIED |
 
-`git diff af04531 HEAD -- finalizer/meta.py` contains changes only to comments, `NOTES` and these two lines.
+`git diff b16188b HEAD -- finalizer/meta.py` contains changes only to comments, `NOTES` and these two lines.
 
 **Fingerprint caveat.** Each function has an AST hash computed without its docstring and name. It is sensitive to spelling. For example, v2 `band_crest_legacy` differs from v1 `band_crest` only by writing `range(E.shape[1])` instead of `range(len(edges) − 1)`; their outputs are identical: **30 of 30 values** across five tracks (`json:corpus.tracks.*.bands.v1_legacy_equals_v2_legacy`). Therefore “CHANGED” in a fingerprint means “the source text differs”, not “the logic differs”. Logical equality is checked by outputs.
 
@@ -130,13 +130,13 @@ Correction to the request: the request said v2 computes `C_max = max(E_b[mask]) 
 | `dsp.true_peak_poly` (v2) | = v1 `true_peak` | **same logic** |
 | `measure.sustain_contour`, `measure.features`, `chain.stereo_width`, `chain.resonance_notches`, `dsp.stft`, `dsp.band_power`, `dsp.limit`, `dsp.trim_true_peak` | = | **unchanged** |
 
-Origin of the v1 gate: the line `act = e[e > e.max() − 45.0]` and the condition `p75[b] < top − 45.0` were introduced in the initial commit `dd99239` (2026-11-04, “FINALIZER: algorithmic mastering against a physical boundary”). The actuator's “quiet band” rule comes from the same commit (`git log -S`, `json:git.gate_introduced`). **VERIFIED.**
+Origin of the v1 gate: the line `act = e[e > e.max() − 45.0]` and the condition `p75[b] < top − 45.0` were introduced in the initial commit `504ce1a` (2026-11-04, “FINALIZER: algorithmic mastering against a physical boundary”). The actuator's “quiet band” rule comes from the same commit (`git log -S`, `json:git.gate_introduced`). **VERIFIED.**
 
 ---
 
 ## 3. v1: how the decision was made and where it broke
 
-The core of v1 (`measure.py:162–165`, `af04531`):
+The core of v1 (`measure.py:162–165`, `b16188b`):
 
 ```python
 act = e[e > e.max() - 45.0]                     # gate on the BAND MAXIMUM
@@ -185,12 +185,12 @@ In v1, `check` did not test the lower threshold (the floor) at all.
 ## 5. Causal chain that produced v2
 
 1. **Requirement.** The meta limits the per-band crest over active programme frames (`METRIC_SPECIFICATION.md` §4 — in the specification this is the “broadband activity mask”).
-2. **v1 implementation (dd99239).** “Activity” was defined inside the band: `e > max_b(e) − 45`. The heuristic moved from the actuator (“a band 40 dB below the loudest one carries no programme”, the `chain.py` comment in dd99239) into the meter, where it began to define the **population**.
+2. **v1 implementation (504ce1a).** “Activity” was defined inside the band: `e > max_b(e) − 45`. The heuristic moved from the actuator (“a band 40 dB below the loudest one carries no programme”, the `chain.py` comment in 504ce1a) into the meter, where it began to define the **population**.
 3. **Consequence 1: self-reference.** The band maximum is set by the loudest event in that band. A short burst in a quiet band redefines the population, the body is excluded, and the crest is computed inside the burst (0.22 dB for +50 dB, 0.5 s).
 4. **Consequence 2: `NaN` as “ok”.** An event that is too short, or a “quiet” band, yields `NaN`, and the judge treats `NaN` as “ok”. The band is not checked, but the master is marked fit.
 5. **Consequence 3: systematic bias.** Even without events, discarding the lower band frames raises the body by 0.0–1.4 dB and underestimates the crest. HYPOTHESIS: the bias grows with the band's dynamic range; on T2 the maximum is in the top bands, on T5 in 30–60 Hz.
 6. **Consequence 4: controller and judge disagree.** The actuator used the body over all frames, the judge used the body over active frames. The threshold used for cutting and the threshold used for judging differed.
-7. **v2 fix (d9fc249).** One mask for body, crest and actuator (`mask = (E_tot ≥ max − 40) & (E_tot ≥ −70)`). `NaN` was replaced by `UNKNOWN`. A floor check was added. The “quiet band” rule was replaced by an absolute threshold.
+7. **v2 fix (64c8a5b).** One mask for body, crest and actuator (`mask = (E_tot ≥ max − 40) & (E_tot ≥ −70)`). `NaN` was replaced by `UNKNOWN`. A floor check was added. The “quiet band” rule was replaced by an absolute threshold.
 8. **What this does not solve.** The population is now consistent, but the gate still depends on the maximum (now global) and remains blind to short events (§6.4, §7).
 
 Conclusion: v2 fixes the **population-definition defect** and the **`NaN = ok` decision defect**. It is not a tuning of a number and not a new meta. The change is visible in the sound (through the actuator) and in decisions (through the judge), but these two effects must be separated, as is done below.
@@ -533,9 +533,9 @@ python3 tests/test_side.py && python3 tests/test_lufs_tp.py
 python3 tests/test_engine.py && python3 tests/test_tui.py
 
 # 2. constants and history
-git diff af04531 HEAD -- finalizer/meta.py
+git diff b16188b HEAD -- finalizer/meta.py
 git log --format='%h %ad %s' --date=short -S'e.max() - 45.0' -- finalizer/measure.py finalizer/chain.py
-git log --oneline af04531..HEAD
+git log --oneline b16188b..HEAD
 
 # 3. full report (renders + judge + codec + gate), ~5 minutes
 python3 research/audit/compare_v1_v2.py \
@@ -553,7 +553,7 @@ python3 research/audit/compare_v1_v2.py --tracks <as in item 3> \
   --out research/audit/compare_v1_v2.json
 ```
 
-Tool versions: Python 3.14.10, numpy 2.4.2, ffmpeg 8.1.3 (`json:environment`). The v1 tree is created by the script with `git archive af04531`.
+Tool versions: Python 3.14.10, numpy 2.4.2, ffmpeg 8.1.3 (`json:environment`). The v1 tree is created by the script with `git archive b16188b`.
 
 ---
 
@@ -563,6 +563,6 @@ Tool versions: Python 3.14.10, numpy 2.4.2, ffmpeg 8.1.3 (`json:environment`). T
 2. **“The code underestimates TP relative to ffmpeg.”** True relative to ffmpeg, but ffmpeg itself overestimates at high frequencies. Relative to the analytic value, our meter overestimates by 0.09–0.28 dB.
 3. **“B and C are orthogonal” and “within-track r = −0.36”.** −0.36 is the pool across tracks. Within-track (with the per-track mean removed) is −0.63. Orthogonality holds only for gain.
 4. **“TP exact” in earlier documents.** Not supported: the meter depends on the filter; Annex 2 from the table differs by −0.27 dB from the reference on T2.
-5. **Sign of the TP tolerance in `_tp_status`.** Introduced by me in commit `d9fc249`: `value <= target + tol` instead of `value + tol <= target`. The fix awaits a decision (§7, #5).
+5. **Sign of the TP tolerance in `_tp_status`.** Introduced by me in commit `64c8a5b`: `value <= target + tol` instead of `value + tol <= target`. The fix awaits a decision (§7, #5).
 6. **`listen/v1_v2/README.md`:** “difference ≤ 0.3 dB” is true for the final masters. For the T2 source at 15–20 kHz the decision changes (9.41 ok → 10.77 FAIL); the README did not reflect that difference.
 7. **The wording “v2 computes C_max”** came from the comparison request; production does not do it (§2.2).

@@ -3,7 +3,7 @@
 **Status:** proposed normative specification for the research programme. It describes the corrected metrics; it is not yet a description of the current code. The deviations of the current implementation are listed in §14.  
 **Version:** `metric-spec 0.1-draft`  
 **Applies to:** the meta of `369arc/finalizer`, research measurements, and the experiment protocols in `EXPERIMENT_DESIGN.md`.  
-**Commit of the audited code:** `af04531`.
+**Commit of the audited code:** `b16188b`.
 
 The purpose of this document is to remove ambiguity. Every quantity has:
 
@@ -442,7 +442,7 @@ Every measurement writes a JSON object (and optionally a CSV row) with at least:
 ```json
 {
   "metric_version": "metric-spec 0.1-draft",
-  "git_commit": "af04531",
+  "git_commit": "b16188b",
   "file": "path/to/master.wav",
   "sha256": "…",
   "sample_rate": 48000,
@@ -528,7 +528,7 @@ These are the minimum tests for an implementation of this specification. They ar
 
 ## 14. Deviations of the current implementation
 
-This table is the bridge between the specification and the code at `af04531`. It is not a criticism of the code's authors; it is a list of the exact places where the code and the written definition diverge.
+This table is the bridge between the specification and the code at `b16188b`. It is not a criticism of the code's authors; it is a list of the exact places where the code and the written definition diverge.
 
 | spec | current code | consequence |
 |---|---|---|

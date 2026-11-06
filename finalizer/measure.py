@@ -144,7 +144,7 @@ def sustain_contour(x, centers, edges, n=16384, hop=4096):
 
 
 def band_crest_legacy(x, edges, n=4096, hop=1024):
-    """The pre-audit estimator, kept for comparison (commit af04531).
+    """The pre-audit estimator, kept for comparison (commit b16188b).
 
     It gates each band on its own maximum (`e > e.max() - 45`), so a short
     event more than 45 dB above a quiet body can replace the body, and it gates

@@ -1,7 +1,7 @@
 # Validation report
 
 **Repository:** `369arc/finalizer`  
-**Commit:** `af04531`  
+**Commit:** `b16188b`  
 **Date:** 2026-11-06  
 **Scope:** the existing regression suites, the new validation measurements performed for the audit, the defects they exposed, and the tests that must exist before the meta can be called a measurement system.
 
@@ -18,7 +18,7 @@ This report is not a certificate. It states what was tested, what passed, what f
 | `tests/test_engine.py` | 10 | CLI commands run; `meta`, `analyse`, `check`, `compare`, `variants`, `master`; three profiles; 24-bit output; silence refused; broken JSON/missing file/unknown profile reported | any numerical correctness of a metric; crest values; LUFS/TP values; floor; side; `NaN`; codec |
 | `tests/test_tui.py` | 14 | picker, profile stage, progress, delete/rename, state path, theme, key bindings | any DSP or meta measurement |
 
-Result at `af04531`:
+Result at `b16188b`:
 
 ```
 1..10   all engine tests passed
@@ -254,7 +254,7 @@ On `T2`, `T4`, `T5` full tracks, the `low` meta master reached `0` crest-over ba
 | D23 | **medium** | the v2 mask uses the global maximum; one +30 dB 50 ms event moves the v2 crest by −0.9…−1.2 dB and removes 12.7 % of frames | `measure.band_crest_detail` | robust gate (percentile of frame maxima); `V1_VS_V2.md` §6.4 |
 | D24 | **medium** | `crest_stage` quiet rule changed to an absolute −70 dB; not justified; the audit (P0.4) asked for a band-based floor | `chain.py:101` | justify or replace; test on a synthetic burst; `V1_VS_V2.md` §6.5 |
 | D25 | **medium** | production `min_frames = 50`; the specification requires 1000 | `measure.py:174, 224, 233` | align |
-| D26 | **high** (fixed in v2) | v1 body population biased upward by the per-band max gate; controller and judge used different populations (up to 1.59 dB) | `measure.py` v1 l.162; `chain.py` v1 l.91 | fixed in `d9fc249`; `V1_VS_V2.md` §3, §6.3 |
+| D26 | **high** (fixed in v2) | v1 body population biased upward by the per-band max gate; controller and judge used different populations (up to 1.59 dB) | `measure.py` v1 l.162; `chain.py` v1 l.91 | fixed in `64c8a5b`; `V1_VS_V2.md` §3, §6.3 |
 
 Severity: **critical** = a release decision can be wrong; **high** = a stated constraint is not implemented or a claim is false; **medium** = the number is estimator-dependent or the tooling is incomplete; **low** = documentation/hygiene.
 
@@ -262,7 +262,7 @@ Severity: **critical** = a release decision can be wrong; **high** = a stated co
 
 ## 4. Post-fix production validation
 
-The audit above describes commit `af04531`. The production fixes were applied
+The audit above describes commit `b16188b`. The production fixes were applied
 after the research layer; the production metric version is now
 `crest-v1.1-broadband-gate`. This section records what changed and what was
 re-run. The audit documents remain the record of why the changes were needed.

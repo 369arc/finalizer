@@ -1,11 +1,11 @@
 {
  "generated_by": "research/audit/compare_v1_v2.py",
  "git": {
-  "head": "90d1a64",
-  "v1": "af04531",
-  "v1_resolved": "af04531",
+  "head": "f621231",
+  "v1": "b16188b",
+  "v1_resolved": "b16188b",
   "tracked_changes": "",
-  "gate_introduced": "d9fc249 2026-11-06 meta: correct the crest gate, report all constraints, fix the false claims\ndd99239 2026-11-04 FINALIZER: algorithmic mastering against a physical boundary"
+  "gate_introduced": "64c8a5b 2026-11-06 meta: correct the crest gate, report all constraints, fix the false claims\ndd99239 2026-11-04 FINALIZER: algorithmic mastering against a physical boundary"
  },
  "environment": {
   "python": "3.14.10",

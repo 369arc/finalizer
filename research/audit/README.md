@@ -56,7 +56,7 @@ python3 research/audit/audit_crest.py --no-bootstrap
 ## What the two estimators are
 
 - **v1** is `finalizer.measure.band_crest_legacy`, the estimator at commit
-  `af04531`: 4096/1024, a per-band `e > e.max() − 45` gate, and a
+  `b16188b`: 4096/1024, a per-band `e > e.max() − 45` gate, and a
   `top − 45 dB` no-programme gate. It is the estimator behind the tables in
   `RESULTS.md` §3.1–3.8. The audit JSON also carries `v1_new`, the corrected
   broadband-gate estimator now used by the production tool.
@@ -87,7 +87,7 @@ for the real per-track data.
 
 ## v1 against v2 (`compare_v1_v2.py`)
 
-Runs the pre-audit tree (`af04531`, via `git archive`) and the current tree on
+Runs the pre-audit tree (`b16188b`, via `git archive`) and the current tree on
 the same signals and files, judges all masters with one meter, runs the codec
 probe with the corrected window, and writes `compare_v1_v2.json`. The report is
 `research/V1_VS_V2.md`; every measured table there is backed by a key of the JSON.

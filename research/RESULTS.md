@@ -1,6 +1,6 @@
 # Results
 
-**Status:** measurements actually performed for the audit, with the current code at commit `af04531`. The device, codec-listening and floor experiments in `EXPERIMENT_DESIGN.md` have **not** been performed; they require a lab and listeners. This document reports what can be measured now, and marks the rest as `UNKNOWN`.
+**Status:** measurements actually performed for the audit, with the current code at commit `b16188b`. The device, codec-listening and floor experiments in `EXPERIMENT_DESIGN.md` have **not** been performed; they require a lab and listeners. This document reports what can be measured now, and marks the rest as `UNKNOWN`.
 
 **Metric version used:** the current code's `band_crest` (4096/1024, max-based active gate, 45 dB no-programme gate), unless a section says otherwise. The proposed corrected metric is in `METRIC_SPECIFICATION.md`; the two are not interchangeable.
 
@@ -11,7 +11,7 @@
 | item | value |
 |---|---|
 | date | 2026-11-06 |
-| repository | `369arc/finalizer`, commit `af04531`, branch `main` |
+| repository | `369arc/finalizer`, commit `b16188b`, branch `main` |
 | Python | 3.14.10 |
 | numpy | 2.4.2 |
 | scipy | 1.18.0 |

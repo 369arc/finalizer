@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare the pre-audit sensor and chain (v1, af04531) with the current one (v2).
+"""Compare the pre-audit sensor and chain (v1, b16188b) with the current one (v2).
 
 Measurement only. The script reads audio, writes synthetic signals and renders
 into a work directory (never into the repository) and writes one JSON file.
@@ -39,7 +39,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-V1 = "af04531"
+V1 = "b16188b"
 SR = 48000
 EDGES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000]
 NB = len(EDGES) - 1

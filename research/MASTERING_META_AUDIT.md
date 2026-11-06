@@ -1,14 +1,14 @@
 # Mastering meta: scientific audit
 
 **Repository:** `369arc/finalizer`  
-**Commit audited:** `af04531` (`meta: state every ceiling as a model estimate, drop the listening claim`)  
+**Commit audited:** `b16188b` (`meta: state every ceiling as a model estimate, drop the listening claim`)  
 **Date:** 2026-11-06  
 **Scope:** the mathematical formulation, the implementation, the stated provenance of every constant, and the evidence available in the repository and in the author's finished masters.  
 **No production file was modified for this audit.** All measurements were read-only; generated audio and figures live outside the source material.
 
 > **Post-audit status.** The production fixes that followed this audit are
 > recorded in `VALIDATION_REPORT.md` §4. This document remains the audit of
-> commit `af04531`; the production metric is now `crest-v1.1-broadband-gate`.
+> commit `b16188b`; the production metric is now `crest-v1.1-broadband-gate`.
 
 ---
 
@@ -49,7 +49,7 @@ The five finished masters are not a validation corpus. They are used here to tes
 
 ## 2. Executive summary
 
-> The findings below describe commit `af04531`. The production fixes that
+> The findings below describe commit `b16188b`. The production fixes that
 > followed are recorded in `VALIDATION_REPORT.md` §4; read the two together.
 > A fix does not erase the finding — it is the reason for the fix.
 
