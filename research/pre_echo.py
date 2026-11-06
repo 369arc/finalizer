@@ -1,7 +1,9 @@
-"""Where the high-band crest ceilings actually come from.
+"""Codec pre-echo probe.
 
-The meta's top bands are limited by codec pre-echo, not by cone excursion.
-This script measures that limit with real encoders instead of guessing a ramp.
+The question is whether a lossy codec turns a high per-band crest into audible
+pre-echo before the device does. The script measures the residue with real
+encoders; it does not assume that the codec is the limit, and it does not
+measure audibility.
 
 The classic pre-echo case is *quiet before a transient*: the encoder quantises
 the window that contains the burst, and the quantisation noise is spread over
@@ -149,8 +151,8 @@ def main():
             print(f"{lo:6.0f}-{hi:<7.0f}{name:>9s}"
                   + "".join(f"{v:7.1f}" for v in row) + f"{rel:9.1f}")
     print("\nlast column: gap residue at the highest crest, relative to the "
-          "band body\n(a residue 30 dB below the body is inaudible in any "
-          "realistic playback)")
+          "band body.\nAudibility is not measured here; the experiment in "
+          "research/EXPERIMENT_DESIGN.md adds the listening test.")
 
 
 if __name__ == "__main__":
