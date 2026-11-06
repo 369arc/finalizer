@@ -129,14 +129,15 @@ estimates, not measurements**:
 |---|---|---|
 | 30–1920 | 6.2 | **assumption** — no device or SPL measurement |
 | 1920–3840 | 7.2 | **hypothesis** — no equation, no measurement |
-| 3840–7680 | 8.3 | **hypothesis** — the codec probe does not bind here |
-| 7680–15360 | 8.0 | **unknown** — the codec rationale was not reproduced |
+| 3840–7680 | 8.3 | **hypothesis** — codec pre-echo present in a corrected probe (`research/V1_VS_V2.md` §6.9); audibility unknown |
+| 7680–15360 | 8.0 | **unknown** — codec residue is codec-dependent in the corrected probe (AAC mostly with a bed, Opus without); audibility unknown |
 | 15360–20000 | 10.3 | **hypothesis/unknown** — no measured limit |
 
 The audit (`research/MASTERING_META_AUDIT.md`) found no device measurement and
-no SPL calibration. The codec pre-echo rationale for the top bands was **not**
-reproduced at AAC 96/128 kbps or Opus 96 kbps in the tested conditions; that
-removes one justification, not the numbers. The five finished masters used in
+no SPL calibration. The codec pre-echo rationale for the top bands was first
+tested with a probe that had a window error and dB averaging; the first
+negative result is **withdrawn**, and the corrected probe re-opens the question
+(`research/V1_VS_V2.md` §6.9). The five finished masters used in
 the audit do not reproduce the old catalogue medians either. Treat the table as
 a starting point for the experiments, not as a norm.
 
@@ -235,8 +236,8 @@ free.
 |---|---|---|
 | `K_b`, 30–1920 Hz | 6.2 dB | **assumption** — no device/SPL measurement |
 | `K_b`, 1920–3840 | 7.2 | **hypothesis** — no equation, no measurement |
-| `K_b`, 3840–7680 | 8.3 | **hypothesis** — codec does not bind in the probe |
-| `K_b`, 7680–15360 | 8.0 | **unknown** — codec rationale not reproduced |
+| `K_b`, 3840–7680 | 8.3 | **hypothesis** — codec pre-echo present in the corrected probe; audibility unknown |
+| `K_b`, 7680–15360 | 8.0 | **unknown** — codec residue is codec-dependent; audibility unknown |
 | `K_b`, 15360–20000 | 10.3 | **hypothesis/unknown** |
 | `F_b` | 2.5 → 5.0 | **assumption**; reported, not auto-enforced |
 | `L₀` | −14 LUFS | delivery convention; platform targets differ |
@@ -261,20 +262,22 @@ Everything in the meta reduces to what `D_b` is taken to be:
 Each mechanism gives its own `K_b`; the meta should take the minimum.
 
 The current constants are not a measured `D_b`: they are assumptions and
-hypotheses. The codec probe removes one candidate mechanism at 96–128 kbps; it
-does not replace it. The device experiment is the one that can.
+hypotheses. The codec probe does not settle the codec question; the device
+experiment is the one that can.
 
 ### What measurement says so far
 
-`research/pre_echo.py` builds "body → quiet gap → burst", encodes it with AAC
-(128/96/64/48/32 kbps) and Opus (96 kbps), and measures what the codec adds to
-the gap before the burst. Up to **21 dB** crest the residue stays **27–38 dB
-below the body**; with a competing −0 dBFS bed it rises to at most +3.5 dB, still
-27 dB below the body. At 48 and 32 kbps the band is dropped rather than smeared.
+**Erratum.** The first probe (`research/pre_echo.py`) concluded that the codec
+does not bind, with residues 27–38 dB below the body. That conclusion is
+**withdrawn**: its gap window excluded the frame immediately before the onset,
+where the pre-echo sits, and its dB averaging diluted a concentrated residue.
 
-So at typical bitrates the codec does **not** bind: `D_b` stays far below `ε`
-for any realistic `C_b`. The top-band ceiling is therefore neither derived from
-nor supported by the codec, and it is the weakest number in the meta.
+The corrected probe (`research/V1_VS_V2.md` §6.9; data in
+`research/audit/compare_v1_v2.json`, key `codec`) runs AAC 128/96 and Opus 96
+at a 21 dB crest. In the frame before the onset the decoded signal exceeds the
+source gap by +3 to +37 dB in every configuration; for AAC 128 at 3.8–7.7 kHz it
+reaches about +4 to +11 dB above the body level for ~2.7 ms. Audibility is not
+measured. The codec question for the top bands is therefore open.
 
 ### The experiment that would close it
 
@@ -479,6 +482,7 @@ The meta is under calibration, and the current numbers are labelled
 - `RESULTS.md` — what was actually measured on five finished masters and
   synthetic signals;
 - `VALIDATION_REPORT.md` — reference comparisons, defects and regression tests.
+- `V1_VS_V2.md` — technical comparison of the pre-audit and current sensor and chain, with the corrections found while doing it.
 
 The research tools (`research/metrics.py`, `research/audit/`,
 `research/experiments/`) measure only: they read audio and write JSON/CSV/PNG,

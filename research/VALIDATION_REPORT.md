@@ -247,6 +247,14 @@ On `T2`, `T4`, `T5` full tracks, the `low` meta master reached `0` crest-over ba
 | D16 | **low** | README catalogue/ear/codec claims; “every streaming service −14” | README lines 124–169 | remove/replace |
 | D17 | **low** | `profiles.toml` `low` comment “no colouring” | file | correct |
 | D18 | **low** | research dependencies not declared | `requirements.txt` | add `requirements-research.txt` |
+| D19 | **high** | `pre_echo.py` gap window excludes the frame before onset; dB averaging dilutes the residue; the negative codec conclusion is withdrawn | `pre_echo.py` (gap window), `V1_VS_V2.md` §6.9 | corrected probe in `compare_v1_v2.py`; old output kept; more bursts and random phase still needed |
+| D20 | **high** | production TP check: `_tp_status` uses `value <= target + tol`, accepting up to −0.9 dBTP | `run.py` `_tp_status` | `value + tol <= target`; decision pending |
+| D21 | **high** | the specification's TP inequality (u = 0.1) fails every master trimmed to −1.00 dBTP | `METRIC_SPECIFICATION.md` §8.2 vs `dsp.trim_true_peak` | choose internal target `T0 − u` (−1.1) or u for the max meter; decision pending |
+| D22 | **high** | production has no `C_max`/`C_local`; a short burst below ≈0.5 % of active frames gives a false PASS on long files | `measure.band_crest_detail` | add a duration-independent statistic; `V1_VS_V2.md` §6.4 |
+| D23 | **medium** | the v2 mask uses the global maximum; one +30 dB 50 ms event moves the v2 crest by −0.9…−1.2 dB and removes 12.7 % of frames | `measure.band_crest_detail` | robust gate (percentile of frame maxima); `V1_VS_V2.md` §6.4 |
+| D24 | **medium** | `crest_stage` quiet rule changed to an absolute −70 dB; not justified; the audit (P0.4) asked for a band-based floor | `chain.py:101` | justify or replace; test on a synthetic burst; `V1_VS_V2.md` §6.5 |
+| D25 | **medium** | production `min_frames = 50`; the specification requires 1000 | `measure.py:174, 224, 233` | align |
+| D26 | **high** (fixed in v2) | v1 body population biased upward by the per-band max gate; controller and judge used different populations (up to 1.59 dB) | `measure.py` v1 l.162; `chain.py` v1 l.91 | fixed in `d9fc249`; `V1_VS_V2.md` §3, §6.3 |
 
 Severity: **critical** = a release decision can be wrong; **high** = a stated constraint is not implemented or a claim is false; **medium** = the number is estimator-dependent or the tooling is incomplete; **low** = documentation/hygiene.
 

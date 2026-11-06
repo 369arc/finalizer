@@ -8,8 +8,9 @@ Four groups of numbers:
 1. CREST_MAX -- per octave band, how far a peak may rise above that band's own
    body. Body = P75 of the band envelope; crest = P99.5 - P75. These are
    PROVISIONAL MODEL ESTIMATES, not measurements. The audit did not reproduce
-   the device-law or codec-pre-echo rationale; see research/MASTERING_META_AUDIT.md
-   and research/RESULTS.md. The 75 dB SPL reference is not implemented in code.
+   the device-law rationale. The codec pre-echo rationale was re-opened by a
+   corrected probe (research/V1_VS_V2.md, section 6.9); audibility is unknown.
+   The 75 dB SPL reference is not implemented in code.
 2. CREST_MIN -- a provisional craft floor. It is displayed but NOT enforced by
    the chain or by `check`; the audit found no empirical basis for a universal
    value. See research/EXPERIMENT_DESIGN.md for the experiment that would
@@ -83,8 +84,9 @@ def get(name=None):
 
 NOTES = {
     "crest_max": "Provisional model estimate at a 75 dB SPL reference; not "
-                 "measured. The codec rationale was not reproduced at "
-                 "96-128 kbps; see research/pre_echo.py and the audit.",
+                 "measured. The codec pre-echo residue was re-opened by a "
+                 "corrected probe (research/V1_VS_V2.md, section 6.9); "
+                 "audibility unknown.",
     "crest_min": "Provisional craft floor; reported by check/master, not "
                  "enforced by the chain. The audit found no empirical basis; "
                  "see the F_b experiment design.",

@@ -1,5 +1,11 @@
 """Codec pre-echo probe.
 
+KNOWN BUG (erratum 2026-11-06): the gap window `[i-look, i-1)` excludes the
+frame immediately before the onset, which carries the pre-echo, and the residue
+is averaged in dB. The conclusion "the codec does not bind" is withdrawn. The
+output is kept as produced, for reproducibility. The corrected probe is
+`codec_probe` in research/audit/compare_v1_v2.py; see research/V1_VS_V2.md, 6.9.
+
 The question is whether a lossy codec turns a high per-band crest into audible
 pre-echo before the device does. The script measures the residue with real
 encoders; it does not assume that the codec is the limit, and it does not

@@ -55,7 +55,7 @@ The five finished masters are not a validation corpus. They are used here to tes
 
 1. **`K_b` is not measured.** No part of the repository contains a device measurement, an SPL calibration, or a perceptual threshold. The values `6.2 / 7.2 / 8.3 / 8.0 / 10.3` are assumptions or hypotheses. The `75 dB SPL` reference exists only as a comment; the code never converts digital level to SPL.
 2. **The low-band 6.2 dB is the most consequential and the least supported value.** It binds on `T3`, `T5` and `T2` and is applied identically to 30–60, 60–120, 120–240, 240–480, 480–960 and 960–1920 Hz, although the physical mechanisms (excursion, port, thermal compression, limiter) are different.
-3. **The codec rationale for the top bands is not reproduced** at AAC 96/128 kbps or Opus 96 kbps in the tested conditions. The current result is limited to synthetic mono band noise, one encoder implementation, 50 ms bursts and a 20 ms measurement window. It supports “the codec is not the binding constraint in these conditions”; it does not support a general codec law, and it does not establish the top-band numbers.
+3. **The codec rationale for the top bands was first reported as not reproduced; that negative result is withdrawn (erratum in D2).** The original probe excluded the frame immediately before the onset and averaged the residue in dB. The corrected probe (`V1_VS_V2.md` §6.9) finds pre-echo energy in that frame for AAC 96/128 and Opus 96 at a 21 dB crest. The data are still limited to synthetic mono band noise, one encoder implementation, 50 ms bursts and a few window lengths; audibility is UNKNOWN. The codec neither justifies the top-band numbers nor is ruled out by them.
 4. **The crest estimator is not a peak estimator.** `C_b = P99.5 − P75` is a duration-weighted tail statistic. Events shorter than about 0.5 % of the analysed frames are invisible to it. A 50 dB burst lasting 0.5 s in a quiet band was measured as `C_b = 0.38 dB`; bursts of 0.1–0.3 s returned `NaN`, which the tool treats as a pass.
 5. **The “no programme” gate silently removes bands.** A band whose P75 is more than 45 dB below the loudest band is assigned `NaN`. On `T1` the top two bands are skipped; on `T5` the top octave is skipped. `NaN` is treated as `ok` in `run.py` and in `chain.master`’s report. A release can therefore be certified while a band was never assessed.
 6. **Body and crest are not independent.** They are order statistics of the same sample. Across 10 s segments of the five masters the pooled correlation is `r = −0.36` (per-band `−0.66 … +0.04`). The claim “orthogonal by construction” is false. A crest stage that clamps a long or deep peak can also move P75: measured `−2.09 dB` in 15–20 kHz on a 30 s excerpt, and `< 0.6 dB` on the full tracks.
@@ -364,7 +364,9 @@ The 6.2 dB is applied to six bands with different physics. A phone's 100 Hz beha
 
 #### D2. The codec pre-echo limit determines the top bands
 
-**Status: REJECTED for the tested conditions; UNKNOWN in general.**
+**Status: WITHDRAWN (erratum 2026-11-06, `V1_VS_V2.md` §6.9).** The probe excluded the frame before the onset and averaged in dB; the corrected probe shows pre-echo energy in that frame for AAC and Opus at a 21 dB crest. Audibility: UNKNOWN.
+
+**Erratum.** The conclusion below — “the codec does not bind” — is withdrawn. The gap window `[i−look, i−1)` excluded the frame immediately before the onset, where the pre-echo sits, and the dB mean diluted a concentrated residue. The tables are kept as the output of the old probe. The corrected probe is `codec_probe` in `research/audit/compare_v1_v2.py`; results are in `V1_VS_V2.md` §6.9 and `compare_v1_v2.json` (`codec`).
 
 `research/pre_echo.py` builds “body → quiet gap → burst”, encodes it with AAC (128/96/64/48/32 kbps) and Opus (96 kbps), and measures what the codec adds to the 20 ms gap before the burst. The current output:
 
@@ -383,11 +385,11 @@ The 6.2 dB is applied to six bands with different physics. A phone's 100 Hz beha
 | 15360–20000 | AAC 96 | −6.1 … −8.0 | −37.7 |
 | 15360–20000 | Opus 96 | 0.1 … 1.0 | −28.7 |
 
-With a competing 0 dBFS bed, the added residue rose to at most `+3.5 dB`, still `27 dB` below the body. At 48 and 32 kbps the band is dropped, not smeared (added residue `−23` to `−135 dB`). The codec does not bind in these conditions.
+With a competing 0 dBFS bed, the added residue rose to at most `+3.5 dB`, still `27 dB` below the body. At 48 and 32 kbps the band is dropped, not smeared (added residue `−23` to `−135 dB`). **On this window the codec did not appear to bind; that conclusion is withdrawn (erratum above).**
 
-The limitations are substantial: synthetic mono band noise, one encoder implementation (`ffmpeg` native AAC and `libopus`), 50 ms bursts, one gap length, no real music, no confidence intervals, no listening test, no other codecs (HE-AAC, MP3, Vorbis, AC-3), no stereo masking, no bitrate below 32 kbps or above 128 kbps. The result is **SUPPORTED for the tested conditions**, not a general law. It removes the codec as the justification for the top-band numbers; it does not replace it with another measurement.
+The limitations are substantial: synthetic mono band noise, one encoder implementation (`ffmpeg` native AAC and `libopus`), 50 ms bursts, one gap length, no real music, no confidence intervals, no listening test, no other codecs (HE-AAC, MP3, Vorbis, AC-3), no stereo masking, no bitrate below 32 kbps or above 128 kbps. The old result was **SUPPORTED for the tested conditions**, not a general law; after the window correction it is **WITHDRAWN**. It never removed the codec as a possible constraint on the top-band numbers, and the corrected probe re-opens the question.
 
-The script’s docstring still says “The meta’s top bands are limited by codec pre-echo, not by cone excursion. This script measures that limit.” That is the hypothesis the script was written to test; the result did not confirm it. The docstring also says “a residue 30 dB below the body is inaudible in any realistic playback” — an unsupported perceptual claim. The audit treats both as documentation errors, not as measurements.
+The script’s docstring still says “The meta’s top bands are limited by codec pre-echo, not by cone excursion. This script measures that limit.” That is the hypothesis the script was written to test; the old result did not confirm it, and the corrected probe supports it in direction but not in magnitude. The docstring also says “a residue 30 dB below the body is inaudible in any realistic playback” — an unsupported perceptual claim. The audit treats both as documentation errors, not as measurements.
 
 #### D3. The catalogue median of eight masters supports the curve
 
@@ -430,9 +432,9 @@ The values are:
 | band | K_b | current status | audit status |
 |---|---:|---|---|
 | 1920–3840 | 7.2 | model estimate | **HYPOTHESIS**; no equation, no measurement |
-| 3840–7680 | 8.3 | model estimate | **HYPOTHESIS**; the codec probe shows the largest added residue here, but still −28 dB below body |
-| 7680–15360 | 8.0 | model estimate, unverified | **UNKNOWN**; codec rationale not reproduced; 8.0 is *lower* than 8.3, which the codec mechanism does not explain |
-| 15360–20000 | 10.3 | model estimate | **HYPOTHESIS/UNKNOWN**; “plenty of air, no real limit” is an assertion; the codec probe attenuates this band at AAC 96 |
+| 3840–7680 | 8.3 | model estimate | **HYPOTHESIS**; corrected probe shows pre-echo in the frame before onset; audibility UNKNOWN |
+| 7680–15360 | 8.0 | model estimate, unverified | **UNKNOWN**; codec residue is codec-dependent in the corrected probe; audibility UNKNOWN; 8.0 is *lower* than 8.3, which the codec mechanism does not explain |
+| 15360–20000 | 10.3 | model estimate | **HYPOTHESIS/UNKNOWN**; “plenty of air, no real limit” is an assertion; the corrected probe finds pre-echo here for AAC and Opus, audibility UNKNOWN |
 
 The non-monotonic `8.3 → 8.0 → 10.3` is a red flag. A single physical mechanism (excursion, thermal compression, codec pre-echo) would not normally produce a dip at 7680–15360 followed by a rise at 15360–20000. The shape looks like a composite of different considerations (or a fit to a particular set of tracks), not a model. If there is a mechanism, it must be stated as an equation and tested; if there is not, the numbers are placeholders.
 
@@ -652,7 +654,7 @@ The fixes are ordered by scientific risk. “P0” means the current tool can gi
 |---|---|---|
 | P1.1 | Remove “orthogonal by construction”, “P75 does not move by construction”, and “contour preserved” from README/`measure.py`/`chain.py`; replace with the three-part statement in A3. | The claims are false in general. |
 | P1.2 | Remove the catalogue/ear rationale from README and `meta.py` (“two independent derivations agree”, “what the ear found”, “median of eight finished masters”). | The user’s instruction; the data do not reproduce the medians. |
-| P1.3 | Remove the codec rationale from the top-band table/body; keep the measured result and its limitations. | The codec does not bind at 96–128 kbps in the tested conditions. |
+| P1.3 | Remove the codec claim from the top-band table/body; keep the measured result and its limitations. | The original negative result was withdrawn; the corrected probe re-opens the codec question (audibility UNKNOWN). |
 | P1.4 | Remove “every streaming service normalises to −14 LUFS”; state the platform convention and examples (Spotify −14, Apple −16, Deezer −15). | False as a universal claim. |
 | P1.5 | Remove “side is filtered out / always mono”; say “high-passed; residual side is measured”. | The exact-zero claim is false. |
 | P1.6 | Remove `CREST_MAX_CALIBRATED`; keep one source of truth. | Dead duplicate with a misleading name. |

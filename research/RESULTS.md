@@ -287,6 +287,15 @@ This table is the reason the constants cannot simply be carried over: the correc
 
 ## 4. Codec pre-echo experiment
 
+> **Erratum (2026-11-06): the conclusion of this section is withdrawn.**
+> The gap window `env[i−look : i−1]` excludes the frame immediately before the
+> onset, and the residue is averaged in dB. The pre-echo sits in that frame: for
+> AAC 128 at a 21 dB crest, 3.8–7.7 kHz, the decoded frame before the onset is
+> −26…−19 dB against a body of −30.3 dB. The corrected probe, its power-domain
+> residues and per-burst values are in `research/V1_VS_V2.md` §6.9 and
+> `research/audit/compare_v1_v2.json` (`codec`). The tables below are kept as
+> they were produced by the old window.
+
 `research/pre_echo.py` (current version) generated “body → 100 ms quiet gap → 50 ms burst” in four bands, encoded with AAC 128/96/64/48/32 kbps and Opus 96 kbps, decoded, aligned by envelope correlation, and measured the codec-added residue in the 20 ms before the burst. The body is at −30 dB, the gap at −60 dB; the burst is at the nominal crest above the body. The script uses a 128-sample RMS envelope and an 8th-order Butterworth band-pass.
 
 Current output (added residue, dB; positive = the codec added energy):
@@ -308,7 +317,7 @@ Current output (added residue, dB; positive = the codec added energy):
 
 The codec-added residue is at most `+2.5 dB` (AAC 128, 3840–7680) and remains `28–38 dB` below the body. With a competing 0 dBFS bed, the added residue rose to at most `+3.5 dB`, still `27 dB` below the body. At 48 and 32 kbps the band was dropped rather than smeared (added residue `−23` to `−135 dB`).
 
-**Interpretation.** In the tested conditions, the codec does not bind: the residue stays far below the body for crests up to 21 dB. This removes the codec as the *justification* for the top-band ceilings. It does not establish the ceilings, and it does not generalize to other codecs, bitrates, encoders, stereo material or real music. The test is synthetic mono band noise, one encoder implementation, 50 ms bursts, one gap length; there are no confidence intervals and no listening test.
+**Interpretation (WITHDRAWN, see the erratum above).** In the tested conditions, the codec does not bind: the residue stays far below the body for crests up to 21 dB. This removes the codec as the *justification* for the top-band ceilings. It does not establish the ceilings, and it does not generalize to other codecs, bitrates, encoders, stereo material or real music. The test is synthetic mono band noise, one encoder implementation, 50 ms bursts, one gap length; there are no confidence intervals and no listening test.
 
 **Measurement caveats.** The body occupies 75 % of each 600 ms period, so P75 sits at the body/gap boundary; the `band_crest` of the test signal is 0.4–0.7 dB below the nominal label (e.g., 2.6 at nominal 3, 5.4 at 6, 11.4 at 12, 20.3 at 21). The gap window is ~20 ms, matching a codec window; the 8th-order band-pass has a group delay but no pre-ringing. The residue is averaged in dB, not power, which biases it downward by ~1–2 dB for a fluctuating residue. The `pre_echo.py` docstring's claim that “a residue 30 dB below the body is inaudible in any realistic playback” is not supported by a listening test and should be removed.
 
