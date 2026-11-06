@@ -2,7 +2,7 @@
 
     tree is always on screen
     ┌──────────────────────────────────────────────┐
-    │  ▾ FILES                                    │
+    │  ▾ FILES                                     │
     │    ▾ ALBUM                                   │
     │      ● track.wav                             │
     │                                              │
