@@ -1,4 +1,4 @@
-"""The drone meta: a boundary, not a target.
+"""The meta: a boundary, not a target.
 
 It answers one question -- "can this be released?" -- and says nothing about how
 a piece should sound. Inside the boundary the picture is yours.
@@ -48,53 +48,39 @@ LUFS = -14.0
 TP = -1.0
 MONO_BELOW = 120.0
 
-DRONE = {
-    "name": "drone",
+# The calibrated boundary. There used to be two names for it; only one was
+# ever used, so the second is gone -- two names for the same job is a trap.
+CREST_MAX_CALIBRATED = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
+
+META = {
+    "name": "meta",
     "centers": CENTERS,
     "crest_edges": CREST_EDGES,
-    "crest_max": CREST_MAX,
+    "crest_max": CREST_MAX_CALIBRATED,
     "crest_min": CREST_MIN,
     "lufs": LUFS,
     "tp": TP,
     "mono_below": MONO_BELOW,
 }
 
-# Calibrated 2026.1 candidates, model-based, no catalogue.
-#
-# 75 dB SPL is the "standard" reference; 85 dB SPL is the "safe" reference.
-# Only the codec-driven high bands move: 7.7-15 kHz is the one band the model
-# supports tightening at 75 dB SPL; 15-20 kHz stays open for standard and is
-# protected only in safe.
-CREST_MAX_STANDARD = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
-CREST_MAX_SAFE = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 5.0]
+META_REGISTRY = {"meta": META}
 
-DRONE_STANDARD = dict(DRONE, name="drone-standard",
-                      crest_max=CREST_MAX_STANDARD)
-DRONE_SAFE = dict(DRONE, name="drone-safe",
-                  crest_max=CREST_MAX_SAFE)
-
-META_REGISTRY = {
-    "drone": DRONE,
-    "drone-standard": DRONE_STANDARD,
-    "drone-safe": DRONE_SAFE,
-}
-
-# The calibrated default: 7.7-15 kHz = 8.0 dB, confirmed by two blind
-# listening passes: one where standard and safe were identical, and one where
-# the 8.0 dB change actually engaged and was clearly preferred over legacy 9.5.
-# drone-safe remains available for loud/dense playback; its 15-20 kHz cut is
-# not yet confirmed by listening.
-DEFAULT_META = "drone-standard"
+# 7.7-15 kHz = 8.0 dB was confirmed by two blind listening passes: one where
+# the two candidates were identical, and one where the change actually engaged
+# and was clearly preferred over 9.5. A third candidate cut 15-20 kHz to 5.0 dB
+# and lost the same test on the only two tracks where that band carries
+# programme, so it is gone: cutting the top octave did not help.
+DEFAULT_META = "meta"
 
 
-def get(name="drone"):
+def get(name=None):
     """Return a named meta, or None if unknown."""
-    return META_REGISTRY.get(name)
+    return META_REGISTRY.get(name or DEFAULT_META)
 
 NOTES = {
     "crest_max": "Device limiter/excursion headroom below ~2 kHz; above it "
-                 "the lossy-codec pre-echo limit. Calibrated candidates: "
-                 "drone-standard (75 dB SPL) and drone-safe (85 dB SPL).",
+                 "measured pre-echo of real codecs no longer supports it; "
+                 "8.0 dB at 7.7-15 kHz came from listening.",
     "crest_min": "2.5-5 dB. Below this a band is static, not dynamic.",
     "lufs": "-14 LUFS: streaming normalises here; louder buys nothing.",
     "tp": "-1 dBTP, measured at 4x oversampling, not sample peak.",
@@ -105,7 +91,7 @@ NOTES = {
 
 def as_target(meta=None):
     """Shape the meta like a measured state so the chain can consume it."""
-    meta = meta or DRONE
+    meta = meta or META
     centers = np.array(meta["centers"], dtype=float)
     return {
         "name": meta["name"],
@@ -122,7 +108,7 @@ def as_target(meta=None):
 
 
 def table(meta=None):
-    meta = meta or DRONE
+    meta = meta or META
     lines = [f"  meta: {meta['name']}",
              f"  {'band, Hz':>14s} {'ceiling':>8s} {'floor':>7s}"]
     for i, edge in enumerate(meta["crest_edges"][:-1]):

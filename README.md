@@ -1,7 +1,7 @@
 # FINALIZER
 
-A final layer for drone material: not matching someone else's record, but fitting
-an **admissible region** — a meta.
+A final layer for sustained material: not matching someone else's record, but
+fitting an **admissible region** — a meta.
 
 The meta is a design of perception, not a measurement of taste. It is derived
 from what physically survives on playback devices — limiter headroom, cone
@@ -136,11 +136,11 @@ high crest into pre-echo.
 | 7680–15360 | 9.5 | |
 | 15360–20000 | 10.3 | plenty of air, no real limit |
 
-> **2026.1 calibration.** The default is now `drone-standard`: **7.7–15 kHz =
-> 8.0 dB** (confirmed by two blind listening passes), **15–20 kHz = 10.3 dB**.
-> The table above is the legacy `drone` boundary; `python3 run.py meta` prints
-> the active one. `drone-safe` keeps 15–20 kHz at 5.0 dB for loud/dense
-> playback; that upper-band cut is still awaiting a clean listening test.
+> **2026.1 calibration.** `7.7–15 kHz` sits at **8.0 dB** (confirmed by two
+> blind listening passes), `15–20 kHz` at **10.3 dB**. The table above is the
+> older device-law line; `python3 run.py meta` prints the active boundary. A candidate that also cut 15–20 kHz to 5.0 dB lost a blind
+> comparison on the only two tracks where that band carries programme, and was
+> dropped: cutting the top octave did not help.
 
 **2. Crest floor.** 2.5 → 5 dB on the same bands. Below that it is no longer
 mastering, it is squashing.
@@ -169,7 +169,7 @@ limit, and the meta merely formalises what the ear found on its own.
 ## Free contour — the main mode
 
 Every track has its own frequency response; that is the artistic picture and it
-must not be touched. So by default (`--meta drone`) the contour is **not fitted
+must not be touched. So by default (`--meta meta`) the contour is **not fitted
 at all**. Only what governs translation is regulated:
 
 ```
@@ -185,7 +185,7 @@ envelope**:
 
 Crest control cuts only the upper tail, above `P75 + meta`, so `P75` does not
 change by construction. The report says exactly that: `contour preserved`.
-On a static drone the body deviation is ≤ 1.5 dB RMS, LRA 3.56 → 3.66.
+On static material the body deviation is ≤ 1.5 dB RMS, LRA 3.56 → 3.66.
 
 Shape fitting is switched on explicitly: `--fit-contour` (or `--target REF`,
 where the reference is by definition the picture you asked for).
@@ -193,7 +193,8 @@ where the reference is by definition the picture you asked for).
 The order is chosen for cleanliness, not for effect:
 
 - **contour EQ** (only with `--fit-contour`) — minimum-phase FIR. Linear phase
-  gives pre-ringing: a click *before* the hit. For a drone that is poison.
+  gives pre-ringing: a click *before* the hit. For sustained material that is
+poison.
 - **resonances** are cut only where roughness exceeds the threshold; these are
   narrow peaks, not "brightness". The low end below 100 Hz is excluded — the
   edge of the spectrum is not a resonance.
@@ -257,7 +258,7 @@ summary:
       high  15.98   4.49   9.76  -2.60     0    5.2
 ```
 
-On dark material `high` lifts the air: on one dark drone piece +5.7 dB at 1 kHz
+On dark material `high` lifts the air: on one dark piece +5.7 dB at 1 kHz
 and **+13.2 dB at 10 kHz**. That is not a defect but a direct consequence of the track sitting
 far below the speech curve up top. If the top is not wanted, take `mid`.
 

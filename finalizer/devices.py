@@ -97,7 +97,7 @@ def _soft_gate(level_db, floor_db=FLOOR_DB, width_db=WIDTH_DB):
 def _k_curve(centers):
     """K-weighting magnitude in dB at each band centre (BS.1770 biquads).
 
-    Raw energy weighting is a bass detector: on a drone the low bands hold
+    Raw energy weighting is a bass detector: on sustained material the low bands hold
     almost all the power, so a 3 dB move at 2 kHz disappears. Weighting by how
     loud a band is *heard* is what the metric is actually about.
     """

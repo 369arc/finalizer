@@ -1,4 +1,4 @@
-"""The drone chain.
+"""The chain.
 
 Order matters and is chosen for cleanliness, not for effect:
 
@@ -22,7 +22,7 @@ def resonance_notches(src, tgt, threshold=2.5, max_depth=4.0, q=5.0,
                       min_hz=100.0, max_hz=12000.0, max_rough=None):
     """Remove peaks that are either rougher than the reference or absolutely rough.
 
-    A drone's low-frequency edge is not a resonance, hence min_hz.
+    A sustained tone's low-frequency edge is not a resonance, hence min_hz.
     """
     rs = measure.roughness(src)
     # a meta has no contour, so there is nothing to compare against: fall back

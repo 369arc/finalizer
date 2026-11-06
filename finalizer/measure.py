@@ -1,6 +1,6 @@
-"""Measuring the reference state of a drone.
+"""Measuring the reference state of sustained material.
 
-A drone is not judged by transients, so the state vector is:
+This material is not judged by transients, so the state vector is:
   contour   -- long-term band levels (the shape that must be "mathematically right")
   smooth    -- the same after removing resonances (what we actually steer toward)
   width     -- side/mid per band (the "volume" of the image)

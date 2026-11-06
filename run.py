@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""FINALIZER -- reference-state mastering for drone material.
+"""FINALIZER -- reference-state mastering for sustained material.
 
-  meta     [--name drone-standard]     print the admissible region
+  meta     [--name meta]     print the admissible region
   analyse  FILE...                     measure contour, width, crest, resonances
   check    FILE...                     how far the balance moves on real devices
   compare  A B                         state difference A -> B
-  master   SRC --meta drone-standard --out OUT  bring SRC inside the meta
+  master   SRC --meta meta --out OUT  bring SRC inside the meta
   master   SRC --target REF --out OUT  ...or onto a measured reference
 """
 import argparse
@@ -111,14 +111,14 @@ def cmd_master(a):
         raise SystemExit(f"{a.src}: the file is silent -- nothing to master")
 
     # The meta is the boundary; a target only supplies the picture.  Resolve
-    # it once so the target branch does not silently fall back to legacy DRONE.
+    # it once so the target branch does not silently fall back to a default.
     meta_name = a.meta or metamod.DEFAULT_META
     base_meta = metamod.get(meta_name)
     if base_meta is None:
         raise SystemExit(f"unknown meta: {meta_name} "
                          f"(available: {', '.join(sorted(metamod.META_REGISTRY))})")
 
-    # an explicit target beats a profile's meta: the profile says "drone" by
+    # an explicit target beats a profile's meta: the profile says "meta" by
     # default, but a file on the command line is a decision, not a default
     if a.meta and not (a.target or a.target_json):
         m = base_meta
@@ -635,7 +635,7 @@ def main(argv=None):
 
     q = sub.add_parser("master")
     q.add_argument("src")
-    q.add_argument("--meta", default=None, help="drone")
+    q.add_argument("--meta", default=None, help="meta")
     q.add_argument("--target", default=None)
     q.add_argument("--target-json", default=None)
     q.add_argument("--target-smooth", type=float, default=0.0)

@@ -1,6 +1,6 @@
 """Core DSP for FINALIZER.
 
-Design constraints for drone material:
+Design constraints for sustained material:
   * no pre-ringing  -> minimum-phase FIR for the static contour, never linear phase
   * no pumping      -> dynamics are slow or absent; the limiter is a safety net
   * no aliasing     -> every stage is either linear or minimum-phase
