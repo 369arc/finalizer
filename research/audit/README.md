@@ -81,3 +81,16 @@ for the real per-track data.
 - They do not modify the source audio.
 - They do not "fix" a master to the meta.
 - They do not replace the experiments in `research/EXPERIMENT_DESIGN.md`.
+
+## v1 against v2 (`compare_v1_v2.py`)
+
+Runs the pre-audit tree (`af04531`, via `git archive`) and the current tree on
+the same signals and files, judges all masters with one meter, runs the codec
+probe with the corrected window, and writes `compare_v1_v2.json`. The report is
+`research/V1_VS_V2.md`; every measured table there is backed by a key of the JSON.
+
+```bash
+python3 research/audit/compare_v1_v2.py --tracks T2=... T4=... T5=... \
+  --render-tracks T2 T4 T5 --work /tmp/opencode/fin_compare \
+  --out research/audit/compare_v1_v2.json
+```
