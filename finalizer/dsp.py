@@ -18,6 +18,23 @@ _A1 = np.array([1.0, -1.69065929318241, 0.73248077421585])
 _B2 = np.array([1.0, -2.0, 1.0])
 _A2 = np.array([1.0, -1.99004745483398, 0.99007225036621])
 
+# ITU-R BS.1770-4 Annex 2, 48-tap / 4-phase interpolator. Rows are taps,
+# columns are phases; the prototype is the row-major flattening.
+_ANNEX2 = np.array([
+    [0.0017089843750, -0.0291748046875, -0.0189208984375, -0.0083007812500],
+    [0.0109863281250, 0.0292968750000, 0.0330810546875, 0.0148925781250],
+    [-0.0196533203125, -0.0517578125000, -0.0582275390625, -0.0266113281250],
+    [0.0332031250000, 0.0891113281250, 0.1015625000000, 0.0476074218750],
+    [-0.0594482421875, -0.1665039062500, -0.2003173828125, -0.1022949218750],
+    [0.1373291015625, 0.4650878906250, 0.7797851562500, 0.9721679687500],
+    [0.9721679687500, 0.7797851562500, 0.4650878906250, 0.1373291015625],
+    [-0.1022949218750, -0.2003173828125, -0.1665039062500, -0.0594482421875],
+    [0.0476074218750, 0.1015625000000, 0.0891113281250, 0.0332031250000],
+    [-0.0266113281250, -0.0582275390625, -0.0517578125000, -0.0196533203125],
+    [0.0148925781250, 0.0330810546875, 0.0292968750000, 0.0109863281250],
+    [-0.0083007812500, -0.0189208984375, -0.0291748046875, 0.0017089843750],
+]).reshape(-1)
+
 
 def k_weight(x):
     y = lfilter(_B1, _A1, x, axis=0)
@@ -25,6 +42,8 @@ def k_weight(x):
 
 
 def lufs_integrated(x, sr=SR):
+    if sr != SR:
+        raise ValueError(f"BS.1770-4 K-weighting here is defined at {SR} Hz, got {sr}")
     y = k_weight(x)
     hop = int(0.1 * sr)
     n = len(y) // hop
@@ -59,7 +78,8 @@ def lra(x, sr=SR):
     return float(np.percentile(l[g2], 95) - np.percentile(l[g2], 10))
 
 
-def true_peak(x, os=4):
+def true_peak_poly(x, os=4):
+    """Generic polyphase 4x true peak, dBTP (the pre-audit meter)."""
     xx = x if x.ndim > 1 else x[:, None]
     peak = 0.0
     step = 1 << 20
@@ -68,6 +88,35 @@ def true_peak(x, os=4):
         up = resample_poly(seg, os, 1, axis=0)
         peak = max(peak, float(np.abs(up).max()))
     return 20 * np.log10(peak + 1e-20)
+
+
+def true_peak_annex2(x):
+    """ITU-R BS.1770-4 Annex 2 4x true peak, dBTP."""
+    from scipy.signal import upfirdn
+    xx = x if x.ndim > 1 else x[:, None]
+    peak = 0.0
+    for c in range(xx.shape[1]):
+        y = upfirdn(_ANNEX2, xx[:, c].astype(np.float64), up=4, down=1)
+        peak = max(peak, float(np.abs(y).max()))
+    return 20 * np.log10(peak + 1e-20)
+
+
+def true_peak_meters(x, os=4):
+    """Both meters; the report should name them."""
+    a = true_peak_annex2(x)
+    p = true_peak_poly(x, os)
+    return {"annex2": a, "poly": p, "max": max(a, p)}
+
+
+def true_peak(x, os=4):
+    """Conservative true peak: the larger of Annex 2 and the polyphase meter.
+
+    The two meters differ by up to ~0.5 dB on high-frequency content; taking
+    the maximum leaves headroom on both. The report should print both.
+    """
+    if os != 4:
+        return true_peak_poly(x, os)
+    return max(true_peak_annex2(x), true_peak_poly(x, os))
 
 
 def rms(x):

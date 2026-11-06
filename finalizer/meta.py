@@ -6,16 +6,20 @@ a piece should sound. Inside the boundary the picture is yours.
 Four groups of numbers:
 
 1. CREST_MAX -- per octave band, how far a peak may rise above that band's own
-   body. Body = P75 of the band envelope; peak = P99.5 - P75. The curve comes
-   from the device law (roughly 6 dB of limiter headroom in phones and laptops,
-   widening above ~2 kHz where codec pre-echo instead of excursion is the
-   limit) and, independently, from the median of eight finished masters, which
-   landed on almost the same line.
-2. CREST_MIN -- the floor. Below it you are not mastering, you are squashing.
-3. LUFS / TP -- absolute. Every streaming service normalises to about -14 LUFS,
-   so a hotter master is turned down anyway and keeps only the limiting.
-4. MONO_BELOW -- the side channel is high-passed here. Below it the image must
-   be solid: phones and most small speakers fold down to one.
+   body. Body = P75 of the band envelope; crest = P99.5 - P75. These are
+   PROVISIONAL MODEL ESTIMATES, not measurements. The audit did not reproduce
+   the device-law or codec-pre-echo rationale; see research/MASTERING_META_AUDIT.md
+   and research/RESULTS.md. The 75 dB SPL reference is not implemented in code.
+2. CREST_MIN -- a provisional craft floor. It is displayed but NOT enforced by
+   the chain or by `check`; the audit found no empirical basis for a universal
+   value. See research/EXPERIMENT_DESIGN.md for the experiment that would
+   establish or reject it.
+3. LUFS / TP -- delivery conventions, not physical boundaries. Platform targets
+   differ; the true-peak meter is the larger of BS.1770-4 Annex 2 and a
+   polyphase 4x meter, and the report names both.
+4. MONO_BELOW -- a high-pass corner for the side channel. The side is
+   attenuated, not exactly zero; the report gives side/mid and mono loss below
+   the corner.
 
 What is deliberately NOT here:
 
@@ -38,22 +42,24 @@ CENTERS = [25.0, 31.5, 39.7, 50.0, 63.0, 79.4, 100.0, 126.0, 158.7, 200.0,
 
 CREST_EDGES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000]
 
-# Ceiling: device headroom (excursion below, codec pre-echo above).
+# Provisional model estimate. The values were selected under the legacy crest
+# estimator (per-band max gate); the current estimator uses a broadband
+# activity mask. They are NOT calibrated; see research/MASTERING_META_AUDIT.md.
 CREST_MAX = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
 
-# Floor: past this you are not mastering, you are squashing.
+# Provisional craft floor. Not enforced by the chain or by `check`; the audit
+# found no empirical basis for a universal value. See the audit and the F_b
+# experiment design.
 CREST_MIN = [2.5, 2.5, 2.5, 3.0, 3.0, 3.0, 3.5, 4.0, 4.5, 5.0]
 
 LUFS = -14.0
 TP = -1.0
 MONO_BELOW = 120.0
 
-# The boundary. There used to be two names for it; only one was ever used, so
-# the second is gone -- two names for the same job is a trap.
-CREST_MAX_CALIBRATED = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
-
+# The boundary has one name. The values are provisional; see the audit.
 META = {
     "name": "meta",
+    "metric_version": "crest-v1.1-broadband-gate",
     "centers": CENTERS,
     "crest_edges": CREST_EDGES,
     "crest_max": CREST_MAX,
@@ -76,15 +82,18 @@ def get(name=None):
     return META_REGISTRY.get(name or DEFAULT_META)
 
 NOTES = {
-    "crest_max": "Model estimate at a 75 dB SPL reference: limiter headroom "
-                 "and excursion below ~2 kHz, codec pre-echo above. The codec "
-                 "part is unverified -- measured encoders did not reproduce "
-                 "that limit at 96-128 kbps.",
-    "crest_min": "2.5-5 dB. Below this a band is static, not dynamic.",
-    "lufs": "-14 LUFS: streaming normalises here; louder buys nothing.",
-    "tp": "-1 dBTP, measured at 4x oversampling, not sample peak.",
-    "mono_below": "side is high-passed here; below it the image must survive "
-                  "a single speaker.",
+    "crest_max": "Provisional model estimate at a 75 dB SPL reference; not "
+                 "measured. The codec rationale was not reproduced at "
+                 "96-128 kbps; see research/pre_echo.py and the audit.",
+    "crest_min": "Provisional craft floor; reported by check/master, not "
+                 "enforced by the chain. The audit found no empirical basis; "
+                 "see the F_b experiment design.",
+    "lufs": "Delivery convention, not a physical boundary; platform targets "
+            "differ (Spotify -14, Apple about -16, Deezer -15).",
+    "tp": "Delivery convention; measured on the larger of BS.1770-4 Annex 2 "
+          "and a polyphase 4x meter. Name the meter in a report.",
+    "mono_below": "High-pass corner; the side is attenuated, not zero. The "
+                  "report gives side/mid and mono loss below the corner.",
 }
 
 
@@ -94,6 +103,7 @@ def as_target(meta=None):
     centers = np.array(meta["centers"], dtype=float)
     return {
         "name": meta["name"],
+        "metric_version": meta.get("metric_version"),
         "centers": centers,
         "edges": np.concatenate([[centers[0] / 2 ** (1 / 6)],
                                  centers * 2 ** (1 / 6)]),
@@ -108,7 +118,8 @@ def as_target(meta=None):
 
 def table(meta=None):
     meta = meta or META
-    lines = [f"  meta: {meta['name']}",
+    lines = [f"  meta: {meta['name']}  "
+             f"(metric {meta.get('metric_version', 'unknown')}; provisional)",
              f"  {'band, Hz':>14s} {'ceiling':>8s} {'floor':>7s}"]
     for i, edge in enumerate(meta["crest_edges"][:-1]):
         lines.append(f"  {edge:6.0f}-{meta['crest_edges'][i + 1]:<7.0f} "

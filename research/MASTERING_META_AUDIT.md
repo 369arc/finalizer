@@ -6,6 +6,10 @@
 **Scope:** the mathematical formulation, the implementation, the stated provenance of every constant, and the evidence available in the repository and in the author's finished masters.  
 **No production file was modified for this audit.** All measurements were read-only; generated audio and figures live outside the source material.
 
+> **Post-audit status.** The production fixes that followed this audit are
+> recorded in `VALIDATION_REPORT.md` §4. This document remains the audit of
+> commit `af04531`; the production metric is now `crest-v1.1-broadband-gate`.
+
 ---
 
 ## 1. How to read this document

@@ -3,9 +3,10 @@
 A final layer for sustained material: not matching someone else's record, but
 fitting an **admissible region** — a meta.
 
-The meta is a design of perception, not a measurement of taste. It is derived
-from what physically survives on playback devices — limiter headroom, cone
-excursion, codec pre-echo — and checked against a catalogue.
+The meta is a design of perception, not a measurement of taste. The current
+values are **provisional model estimates**; the audit and the experiments that
+would replace them are in `research/`. Nothing here is calibrated by ear, and
+the old catalogue check is gone.
 
 ![Choosing a file](docs/picker.png)
 
@@ -99,15 +100,15 @@ Both tests work only in temporary directories and never touch your files.
 python3 run.py master SRC.wav --out OUT.wav
 ```
 
-All three profiles sit on the meta boundary: `crest 1.0`, `bass 1.0`
-(< 240 Hz), `mid_guard 4.0` (240–4000 Hz). They differ only in density:
-`low` / `mid` / `high` (see "Profiles"). The older, tighter `crest 0.8 /
-bass 0.7` can still be requested on the command line. Without a profiles file
-the render is neutral.
+All three profiles sit on the crest boundary: `crest 1.0`, `bass 1.0`
+(< 240 Hz). `mid` and `high` add `mid_guard 4.0` (240–4000 Hz); `low` is
+neutral and has no automatic notches. They differ in density: `low` / `mid` /
+`high` (see "Profiles"). The older, tighter `crest 0.8 / bass 0.7` can still be
+requested on the command line. Without a profiles file the render is neutral.
 
 ```
 run.py meta                      # what the meta is and where the numbers come from
-run.py check  FILE...            # how the material survives phone / laptop / car
+run.py check  FILE...            # LUFS, TP, side, crest/floor and the synthetic device model
 run.py analyse FILE...           # contour, width, resonances, crest
 run.py variants SRC --out-dir D  # a grid of parameters for close calls
 ```
@@ -121,37 +122,42 @@ else.
 
 Four groups, and only these.
 
-**1. Crest ceiling per octave.** Phones, laptops and BT speakers have roughly
-6 dB of headroom above the programme level before their own limiters start
-working. A band whose crest is higher makes the device "breathe" — inaudible on
-headphones, audible on a phone. Bass loses first: cone excursion is limited
-before anything else. Above ~3 kHz a second limit appears — a lossy codec turns
-high crest into pre-echo.
+**1. Crest ceiling per octave.** The current values are **provisional model
+estimates, not measurements**:
 
-| band, Hz | ceiling | why |
+| band, Hz | ceiling | status |
 |---|---|---|
-| 30–1920 | 6.2 | device headroom, cone excursion |
-| 1920–3840 | 7.2 | the codec starts to notice |
-| 3840–7680 | 8.3 | pre-echo |
-| 7680–15360 | 9.5 | |
-| 15360–20000 | 10.3 | plenty of air, no real limit |
+| 30–1920 | 6.2 | **assumption** — no device or SPL measurement |
+| 1920–3840 | 7.2 | **hypothesis** — no equation, no measurement |
+| 3840–7680 | 8.3 | **hypothesis** — the codec probe does not bind here |
+| 7680–15360 | 8.0 | **unknown** — the codec rationale was not reproduced |
+| 15360–20000 | 10.3 | **hypothesis/unknown** — no measured limit |
 
-> **Model estimate, not a measurement.** The active boundary is
-> `6.2 / 6.2 / 6.2 / 6.2 / 6.2 / 6.2 / 7.2 / 8.3 / 8.0 / 10.3` at a 75 dB SPL
-> reference. The table above is the older device-law line; `python3 run.py meta`
-> prints the active one. Nothing here is calibrated by ear: listening is not
-> part of the argument yet. The top bands are the weakest link — a measurement
-> of real encoders (`research/pre_echo.py`) did **not** reproduce the codec
-> rationale for them at 96–128 kbps, so those numbers are unverified.
+The audit (`research/MASTERING_META_AUDIT.md`) found no device measurement and
+no SPL calibration. The codec pre-echo rationale for the top bands was **not**
+reproduced at AAC 96/128 kbps or Opus 96 kbps in the tested conditions; that
+removes one justification, not the numbers. The five finished masters used in
+the audit do not reproduce the old catalogue medians either. Treat the table as
+a starting point for the experiments, not as a norm.
 
-**2. Crest floor.** 2.5 → 5 dB on the same bands. Below that it is no longer
-mastering, it is squashing.
+**2. Crest floor.** 2.5 → 5.0 dB, a provisional craft judgment. The floor is
+reported by `check` and by `master`; a floor failure is shown as `UNKNOWN`
+overall, because the value is not calibrated and the chain does not add
+transients to meet it. The experiment that would establish or reject a
+universal floor is in `research/EXPERIMENT_DESIGN.md`.
 
-**3. Absolutes.** −14 LUFS (every streaming service normalises to it; anything
-louder is turned down anyway) and −1 dBTP (measured true peak, not sample peak).
+**3. Delivery conventions.** `−14 LUFS` is a platform convention, not a
+physical boundary — Spotify documents −14, Apple Music is commonly −16, Deezer
+−15, and SoundCloud does not normalize. `−1 dBTP` is a headroom convention;
+the meter is the larger of the BS.1770-4 Annex 2 filter and a polyphase 4×
+meter, and the report names both. Tolerances: ±0.1 LU and +0.1 dB on the named
+meter.
 
-**4. Mono below 120 Hz.** The side channel is filtered out; the low end must
-survive a single speaker.
+**4. Mono below 120 Hz.** The side channel is **high-passed**, not set to zero:
+−3 dB at 120 Hz, −18 dB at 60 Hz. The report gives side/mid, mono loss and the
+low-band correlation. The threshold for “good enough” is not calibrated yet;
+`check` says `UNKNOWN` rather than inventing one. See
+`research/METRIC_SPECIFICATION.md` §9.
 
 **What the meta does not contain: a contour or a width profile.** Matching a
 shape is a separate task and a separate flag (`--target`). One catalogue's
@@ -163,10 +169,11 @@ track: `--crest 0.85` sits 15% below the ceiling, `1.0` sits on it. A hard-coded
 value would mean one track's taste became law for all; that is why it lives in
 `profiles.toml`, not here.
 
-**Two independent derivations agree.** Catalogue medians per octave: 6.0 / 5.0 /
-7.0 / 6.6 / 6.7 / 6.4 / 7.4 / 8.9 / 11.3 / 9.1 dB. The device law: 6.2 up to
-~2 kHz, then rising. They match — the catalogue already lives at the devices'
-limit, and the meta merely formalises what the ear found on its own.
+**No catalogue and no ear in the rationale.** Earlier versions justified the
+curve with a catalogue median and with listening. That is gone. The audit
+measured five finished masters and did not reproduce the old medians; the
+numbers above are assumptions until the experiments replace them. Listening is
+still how a *profile* is chosen; it is not evidence for a boundary.
 
 ## Formal definition
 
@@ -179,48 +186,62 @@ E = {30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000} Hz
 
 For band `b`, let `E_b(n)` be the band power in frame `n`, in dB.
 
-**Body** — the stable part of the envelope:
+**Body** — the stable part of the envelope, over the broadband active frames:
 
 ```
-B_b = P75(E_b)
+B_b = P75(E_b),   E_b over frames where the programme is active
 ```
 
-**Crest** — the peak above the body:
+**Crest** — the tail above the body:
 
 ```
 C_b = P99.5(E_b) − P75(E_b)
 ```
 
-Both are order statistics of the same envelope, so they are orthogonal by
-construction: a cap on `C_b` does not move `B_b`.
+`B_b` and `C_b` are **gain-invariant**: a constant gain shifts `B_b` and leaves
+`C_b` unchanged. They are **not statistically independent** — they are order
+statistics of the same sample — and a deep or long crest cut can move `B_b`.
+The audit measured both effects (`research/RESULTS.md`). The production
+estimator uses a 4096/1024 STFT; the research reference uses a multi-resolution
+band plan (`research/METRIC_SPECIFICATION.md`). The two are not interchangeable.
+
+The production crest estimator uses a broadband activity mask. A band is
+`UNKNOWN`, not a pass, when the file has too few active frames or the band is
+below the noise floor. `NaN` is never reported as `ok`.
+
+The contour report uses `sustain_contour` (16384/4096, P75, no activity mask).
+It is a separate estimator and is not the body subtracted in the crest. The two
+are reported separately; do not compare them as if they were the same number.
 
 **The meta is an admissible set**, not a target curve. A master `y` is inside
 it when
 
 ```
-C_b(y) ≤ K_b     for every band b        crest ceiling
-C_b(y) ≥ F_b     for every band b        crest floor
-L(y)    = L₀ = −14 LUFS                  integrated loudness, ITU-R BS.1770-4
-TP(y)  ≤ T₀ = −1 dBTP                    true peak, 4x oversampled
-side(y) = 0 below f_m = 120 Hz           mono fold-down
+C_b(y) ≤ K_b                  for every assessed band b   crest ceiling
+C_b(y) ≥ F_b                  for every assessed band b   provisional floor
+|L(y) − L₀| ≤ 0.1 LU          L₀ = −14 LUFS               integrated loudness
+TP_meas + u ≤ T₀              T₀ = −1 dBTP, u = meter uncertainty
+R_S(f) ≤ X below f_m          f_m = 120 Hz                side/mid criterion
 ```
 
-Nothing else is regulated — in particular the contour `B_b` and the stereo
-width are free.
+`L₀` and `T₀` are delivery conventions, not physical boundaries. `F_b` and
+`X`/`f_m` are provisional; a failure/unknown is reported, not hidden. Nothing
+else is regulated — in particular the contour `B_b` and the stereo width are
+free.
 
 ### What each number is, and how solid it is
 
 | quantity | value | status |
 |---|---|---|
-| `K_b`, 30–1920 Hz | 6.2 dB | **assumption**: "about 6 dB of limiter headroom" |
-| `K_b`, 1920–3840 | 7.2 | model estimate |
-| `K_b`, 3840–7680 | 8.3 | model estimate |
-| `K_b`, 7680–15360 | 8.0 | model estimate, **unverified** |
-| `K_b`, 15360–20000 | 10.3 | model estimate |
-| `F_b` | 2.5 → 5.0 | craft floor, no derivation |
-| `L₀` | −14 LUFS | platform convention |
-| `T₀` | −1 dBTP | convention (inter-sample headroom) |
-| `f_m` | 120 Hz | physics of folding to one speaker |
+| `K_b`, 30–1920 Hz | 6.2 dB | **assumption** — no device/SPL measurement |
+| `K_b`, 1920–3840 | 7.2 | **hypothesis** — no equation, no measurement |
+| `K_b`, 3840–7680 | 8.3 | **hypothesis** — codec does not bind in the probe |
+| `K_b`, 7680–15360 | 8.0 | **unknown** — codec rationale not reproduced |
+| `K_b`, 15360–20000 | 10.3 | **hypothesis/unknown** |
+| `F_b` | 2.5 → 5.0 | **assumption**; reported, not auto-enforced |
+| `L₀` | −14 LUFS | delivery convention; platform targets differ |
+| `T₀` | −1 dBTP | delivery convention; meter-dependent |
+| `f_m` | 120 Hz | hypothesis; the side is high-passed, not zero |
 
 ### The open problem: `K_b`
 
@@ -239,8 +260,9 @@ Everything in the meta reduces to what `D_b` is taken to be:
 
 Each mechanism gives its own `K_b`; the meta should take the minimum.
 
-Today `D_b` is a **qualitative** model: limiter headroom below ~2 kHz,
-codec pre-echo above. It fixes the shape, not the constants.
+The current constants are not a measured `D_b`: they are assumptions and
+hypotheses. The codec probe removes one candidate mechanism at 96–128 kbps; it
+does not replace it. The device experiment is the one that can.
 
 ### What measurement says so far
 
@@ -257,15 +279,19 @@ nor supported by the codec, and it is the weakest number in the meta.
 ### The experiment that would close it
 
 A reference SPL (75 and 85 dB), a signal with per-band controllable crest, and
-per-band power compression measured on the device; a 2 dB compression criterion,
-as in M-Noise.
+per-band power compression measured on the device. AES75-2023 uses a 2 dB
+compression target for a **broadband loudspeaker maximum-SPL** procedure; using
+that number for a per-band crest is an assumption, not a standard. The
+experiment measures the compression curve and the perceptual threshold and
+reports both.
 
 ```
-K_b(SPL) = max { c : compression_b(c) ≤ 2 dB }
+K_b(SPL) = sup { c : PC_b(c) ≤ δ }
 ```
 
-Then every `K_b` becomes a measurement on a device class, and codec behaviour
-and taste enter as separate terms instead of standing in for physics.
+with `δ` chosen from the engineering criterion and the listening experiment, not
+borrowed. Then `K_b` becomes a measurement on a device class, and codec
+behaviour and taste enter as separate terms instead of standing in for physics.
 
 ## Free contour — the main mode
 
@@ -278,15 +304,17 @@ HPF → resonance suppression → width (mono low only)
     → per-band crest control → presence bell → loudness → limiter → trim
 ```
 
-The key is that contour and crest are two **orthogonal statistics of the same
-envelope**:
+The key is that contour and crest are two statistics of the same envelope:
 
 - band contour = `P75(E_b)` — the body, "where the band lives";
-- band crest = `P99.5(E_b) − P75(E_b)` — the peak above the body.
+- band crest = `P99.5(E_b) − P75(E_b)` — the tail above the body.
 
-Crest control cuts only the upper tail, above `P75 + meta`, so `P75` does not
-change by construction. The report says exactly that: `contour preserved`.
-On static material the body deviation is ≤ 1.5 dB RMS, LRA 3.56 → 3.66.
+They are **gain-invariant**, not statistically independent. Crest control cuts
+the upper tail, which leaves `P75` almost unchanged for a small cut; a deep or
+long cut can move it. The report says `contour change`, with the maximum and
+RMS, not “preserved”. On the full tracks tested in the audit the change was
+≤ 1.5 dB RMS with the notches off; the maximum was up to 3.4 dB in the low
+bands. See `research/RESULTS.md`.
 
 Shape fitting is switched on explicitly: `--fit-contour` (or `--target REF`,
 where the reference is by definition the picture you asked for).
@@ -296,18 +324,21 @@ The order is chosen for cleanliness, not for effect:
 - **contour EQ** (only with `--fit-contour`) — minimum-phase FIR. Linear phase
   gives pre-ringing: a click *before* the hit. For sustained material that is
 poison.
-- **resonances** are cut only where roughness exceeds the threshold; these are
-  narrow peaks, not "brightness". The low end below 100 Hz is excluded — the
-  edge of the spectrum is not a resonance.
+- **resonances** are cut only in profiles that enable `deharsh`; `low` has it
+  off. These are narrow peaks, not "brightness". The low end below 100 Hz is
+  excluded — the edge of the spectrum is not a resonance.
 - **width** is applied to the side channel with a minimum-phase FIR; below
-  120 Hz the side is filtered out, so the low end is always mono.
-- **crest control** is a static threshold `P75 of the band + meta`, not a
-  tracking compressor: in a quiet section it does not invent a peak, in a loud
-  one it does not pump.
-- **the limiter** is a safety net, not a sound: 20 ms lookahead, 400 ms release,
-  normally it never engages at all.
-- **true peak** is measured at 4x and corrected with a static trim, so the
-  ceiling is exact rather than approximate.
+  120 Hz the side is **high-passed** (−3 dB at 120, −18 dB at 60), not zero.
+  The report gives side/mid and mono loss; the threshold is not calibrated.
+- **crest control** is a band-wise gain with lookahead and release, not a
+  static threshold: in a quiet section it does not invent a peak, in a loud one
+  it does not pump. A deep cut can move `P75`; the report shows it.
+- **the limiter** is a safety net, not a sound: 20 ms lookahead, 400 ms release.
+  It engages when the loudness target requires it; "normally never" is not a
+  guarantee.
+- **true peak** is measured on both the BS.1770-4 Annex 2 filter and a
+  polyphase 4× meter and trimmed to the larger. The two can differ by ~0.5 dB
+  on high-frequency content; the report names them.
 
 ## The residual is the result
 
@@ -317,13 +348,15 @@ shown. `feasible-band rms` is the contour error without the bands that are
 physically unreachable.
 
 The same with crest: cutting a peak "down to the sustain" (crest → 0) is a
-square wave. Only the excess above `P75 + meta` is cut.
+square wave. The stage cuts the excess above `P75 + target`, but a deep cut can
+move `P75`; the report shows the change.
 
 The `OVER` line is not a report but an assignment. The tool measures crest after
-processing, subtracts the excess from that band's threshold and runs again until
-every band is inside. This is valid because `clamp` is idempotent and `P75` does
-not move under it: the body stays, only the tail is cut. The stopping criterion
-is 0.1 dB.
+processing, subtracts the excess from that band's threshold and runs again. It
+is **not** guaranteed to preserve `P75`, and the target is clamped at the
+provisional floor: if the floor and ceiling conflict, the band may remain over
+the ceiling and the report says so. The stopping criterion is 0.1 dB for the
+contour, 0.35 dB for the crest report.
 
 ## Profiles
 
@@ -333,9 +366,9 @@ The meta is the boundary, the profile is the pressure inside it. Taste lives in
 ```toml
 default = "mid"
 
-[low]        # no colouring: crest stage and limiter only
-[mid]        # a 1 kHz bell, +4.5 dB, Q 0.4 -- a fixed shape
-[high]       # a one-pass projection toward a speech curve -- shape from the track
+[low]        # no colouring, no automatic notches: crest stage and limiter only
+[mid]        # a 1 kHz bell, +4.5 dB, Q 0.4 -- a fixed shape; notches on
+[high]       # a one-pass projection toward a speech curve; notches on
 ```
 
 ```bash
@@ -413,7 +446,7 @@ meta boundary: a static equaliser changes a band's level, not its crest.
 
 Important: the bell sits **after** the crest stage. Placed before it, it distorts
 the crest measurement — in one run the 7.7–15 kHz band slipped out of control
-because of it (12.4 against a ceiling of 9.5).
+because of it (12.4 against the current 8.0 ceiling).
 
 Everything that was saturation — `--sat*`, `--wave-drive`, `--peak-drive`,
 `--crest-until`, the `mid`/`high`/`push` profiles — is gone. The numbers for the
@@ -432,8 +465,35 @@ earbuds, car cabin, mono) and reports two things:
 A phone always loses the sub — that is physics. If a phone also *changes* the
 midrange, that is a mastering defect.
 
+## Research
+
+The meta is under calibration, and the current numbers are labelled
+**provisional**. The full audit and the experiment protocols are in `research/`:
+
+- `MASTERING_META_AUDIT.md` — claim-by-claim status, the estimator gates, the
+  side/floor gaps, and the required fixes;
+- `METRIC_SPECIFICATION.md` — corrected definitions, units, activity mask,
+  uncertainty and decision rules;
+- `EXPERIMENT_DESIGN.md` — device power-compression, codec, blind listening and
+  `F_b` protocols;
+- `RESULTS.md` — what was actually measured on five finished masters and
+  synthetic signals;
+- `VALIDATION_REPORT.md` — reference comparisons, defects and regression tests.
+
+The research tools (`research/metrics.py`, `research/audit/`,
+`research/experiments/`) measure only: they read audio and write JSON/CSV/PNG,
+never a “corrected” master. The production chain is a separate program.
+
 ## Limitations
 
+- **the meta is provisional.** The crest ceilings and the floor are assumptions
+  or hypotheses; the audit found no device/SPL measurement and did not
+  reproduce the codec rationale for the top bands. See `research/`;
+- **the crest estimator is 4096/1024 and does not resolve 30–60 Hz well.** The
+  research reference uses a multi-resolution band plan; the two estimators are
+  not interchangeable;
+- **the side constraint is a high-pass, not an exact zero.** The side/mid and
+  mono-loss numbers are reported, but the threshold is not calibrated;
 - **input is converted to 48 kHz / 2 channels / float32**. 16 and 24 bit are
   represented exactly in float32, so for them the conversion changes nothing;
   but 44.1 kHz with 48 kHz coefficients puts every crossover and every

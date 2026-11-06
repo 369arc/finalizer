@@ -67,11 +67,12 @@ def stereo_width(x, src, tgt, extra=None, max_db=6.0, mono_below=0.0,
 
 
 def crest_stage(x, edges, crest_max, tau_atk=0.05, tau_rel=0.5, max_cut=18.0,
-                lookahead=0.04):
+                lookahead=0.04, gate_db=40.0, floor_db=-70.0):
     """Cut peaks that rise more than `crest_max` above the band's own sustain.
 
-    The sustain is the band's P75 over the whole piece -- a fixed number, so a
-    quiet section is not mistaken for a peak section and vice versa.
+    The sustain is the band's P75 over the broadband active frames -- a fixed
+    number, so a quiet section is not mistaken for a peak section and vice
+    versa. The activity mask is broadband; a band's own maximum is not used.
     """
     n, hop = 4096, 1024
     X = dsp.stft(x, n, hop)
@@ -88,11 +89,16 @@ def crest_stage(x, edges, crest_max, tau_atk=0.05, tau_rel=0.5, max_cut=18.0,
     for b in range(len(edges) - 1):
         sel = (freqs >= edges[b]) & (freqs < edges[b + 1])
         E[:, b] = 10 * np.log10(P[:, sel].sum(axis=1) + 1e-20)
-    base = np.percentile(E, 75, axis=0)
+    allsel = (freqs >= edges[0]) & (freqs < edges[-1])
+    e_tot = 10 * np.log10(P[:, allsel].sum(axis=1) + 1e-20)
+    mask = ((e_tot >= e_tot.max() - gate_db) & (e_tot >= floor_db)
+            if len(e_tot) else np.zeros(0, dtype=bool))
+    base = (np.percentile(E[mask], 75, axis=0) if mask.any()
+            else np.percentile(E, 75, axis=0))
     over = np.maximum(0.0, E - (base + np.asarray(crest_max))[None, :])
-    # a band 40 dB below the loudest one carries no programme, only noise:
-    # its crest is meaningless and controlling it would just gate the noise
-    quiet = base < (base.max() - 45.0)
+    # a band below the floor carries no programme, only noise: controlling it
+    # would just gate the noise
+    quiet = base < floor_db
     over[:, quiet] = 0.0
 
     hop_s = hop / dsp.SR
@@ -168,6 +174,9 @@ def render(x, tgt, g_extra=None, g_width=None, p=None, notch_state=None):
         ce = np.asarray(p["crest_edges"], dtype=float)
         cm_target = np.asarray(p["crest_max"], dtype=float) - float(p.get("crest_margin", 0.0))
         cm = cm_target.copy()
+        cmin = p.get("crest_min")
+        if cmin is not None:
+            cm = np.maximum(cm, np.asarray(cmin, dtype=float))
         # OVER is a setpoint error, not a report line: tighten the offending
         # bands by exactly the excess and clamp again. Valid because clamping
         # is idempotent and preserves P75 (the body never moves).
@@ -184,6 +193,8 @@ def render(x, tgt, g_extra=None, g_width=None, p=None, notch_state=None):
             if not bad.any():
                 break
             cm = cm - np.where(bad, np.nan_to_num(excess, nan=0.0) + 0.3, 0.0)
+            if cmin is not None:
+                cm = np.maximum(cm, np.asarray(cmin, dtype=float))
             cm = np.maximum(cm, 0.0)
         info.update(ci)
         info["crest_target_eff"] = cm.tolist()

@@ -15,11 +15,13 @@ default = "mid"   # what --no-all-profiles and one-off commands use
 # One meta, one name (see README.md). A CLI --meta overrides the profile's.
 
 [low]
-# the reference point: no colouring. Full meta boundary + limiter.
+# the reference point: no colouring, no automatic notches. Full meta boundary
+# + limiter. The contour is free; the report shows how much it moved.
 meta = "meta"
 crest = 1.0
 bass = 1.0
 bass_hz = 240.0
+deharsh = false
 
 [mid]
 # the balance chosen by ear: one broad bell, +4.5 dB at 1 kHz, Q 0.4.
@@ -32,6 +34,7 @@ bass = 1.0
 bass_hz = 240.0
 mid_guard = 4.0
 eq_peak = [1000.0, 4.5, 0.4]
+deharsh = true
 
 [high]
 # the strength knob is max_eq, not pull: the difference is projected toward a
@@ -45,6 +48,7 @@ crest = 1.0
 bass = 1.0
 bass_hz = 240.0
 mid_guard = 4.0
+deharsh = true
 target = "references/speech_ltass.json"
 pull = 1.0
 one_shot = true

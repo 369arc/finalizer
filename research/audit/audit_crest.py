@@ -102,7 +102,8 @@ def measure_track(path, do_bootstrap=True):
     E = envelope(x)
     raw = crest_v1(E)
     gated = crest_v1(E, "max45")
-    v1 = measure.band_crest(x, EDGES)
+    v1 = measure.band_crest_legacy(x, EDGES)      # the af04531 estimator
+    v1_new = measure.band_crest(x, EDGES)         # corrected broadband gate
     if do_bootstrap:
         lo, hi, sd = bootstrap(E)
     else:
@@ -122,6 +123,7 @@ def measure_track(path, do_bootstrap=True):
         "raw": raw.tolist(),
         "gated": gated.tolist(),
         "v1": v1.tolist(),
+        "v1_new": v1_new.tolist(),
         "ci": {"lo": lo.tolist(), "hi": hi.tolist(), "sd": sd.tolist()},
         "window": win,
         "duration": dur,

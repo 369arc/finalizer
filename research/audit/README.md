@@ -52,10 +52,11 @@ python3 research/audit/audit_crest.py --no-bootstrap
 
 ## What the two estimators are
 
-- **v1** is the production `finalizer.measure.band_crest` at commit `af04531`:
-  4096/1024, a per-band `e > e.max() − 45` gate, and a `top − 45 dB`
-  no-programme gate. It is the estimator behind the tables in
-  `RESULTS.md` §3.1–3.8.
+- **v1** is `finalizer.measure.band_crest_legacy`, the estimator at commit
+  `af04531`: 4096/1024, a per-band `e > e.max() − 45` gate, and a
+  `top − 45 dB` no-programme gate. It is the estimator behind the tables in
+  `RESULTS.md` §3.1–3.8. The audit JSON also carries `v1_new`, the corrected
+  broadband-gate estimator now used by the production tool.
 - **v2** is `research/metrics.py`: multi-resolution bands (16384 for 30–60,
   8192 for 60–120, 4096 above), a broadband activity mask, and separate
   `C_tail`, `C_local`, `C_max` statistics. It is the proposed estimator; the

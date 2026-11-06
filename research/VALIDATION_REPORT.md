@@ -252,7 +252,64 @@ Severity: **critical** = a release decision can be wrong; **high** = a stated co
 
 ---
 
-## 4. Reproducibility
+## 4. Post-fix production validation
+
+The audit above describes commit `af04531`. The production fixes were applied
+after the research layer; the production metric version is now
+`crest-v1.1-broadband-gate`. This section records what changed and what was
+re-run. The audit documents remain the record of why the changes were needed.
+
+| defect | change | evidence |
+|---|---|---|
+| D1 max-based gate | `band_crest` now uses a broadband 40 dB activity mask; `band_crest_legacy` keeps the old estimator for comparison | the 50 dB burst is `> 40 dB` in `tests/test_crest_gate.py`; the legacy estimator still gives 0.22/NaN |
+| D2 `NaN` as pass | `band_crest_detail` returns `status`; `crest_report` is three-valued; `check`/`master` print `UNKNOWN` | `tests/test_floor.py`; `check` output on T2 |
+| D3 floor | `crest_report` checks `F_b`; the chain clamps its target at the floor but does not add transients; a floor failure is `UNKNOWN` overall, not a PASS | `tests/test_floor.py`; T2 30–60 1.6 < 2.5 is shown as `FAIL`/`UNKNOWN` |
+| D4 side | `measure.side_metrics` reports side/mid, mono loss and corr; `check`/`master` say `UNKNOWN` until the threshold is calibrated | `tests/test_side.py`; T2 output −27.9 dB, T4 −15.3 dB |
+| D5 orthogonality | README/measure/chain comments corrected; the report says `contour change`, not “preserved” | audit text; T4 `max |d| 3.43 dB` with deharsh off |
+| D6 `deharsh` | meta-only default is off; `low` sets `deharsh=false`; `mid`/`high` set true | profiles.toml; T4/T2/T5 `notches 0` with `low` |
+| D7 `check` | evaluates L, TP, side, crest and floor; prints `release: PASS/FAIL/UNKNOWN` | `run.py check` output |
+| D8 true peak | dual meter: BS.1770-4 Annex 2 and polyphase, conservatively maxed; report names both | `tests/test_lufs_tp.py`; 19 kHz: Annex2 0.20, poly 0.28 |
+| D9 30–60 resolution | production still uses 4096/1024; the research metric uses multi-resolution; the README states the difference | `research/metrics.py`; v2 table |
+| D12 duplicate | `CREST_MAX_CALIBRATED` removed | `meta.py` |
+| D13 LUFS rate | `lufs_integrated` rejects non-48 kHz | `tests/test_lufs_tp.py` |
+| D14 pre-echo claim | script docstring still needs the Phase 5 cleanup; the audit result is unchanged | — |
+
+End-to-end `low` profile on the full tracks with the new gate (`deharsh` off):
+
+| track | bands over | unknown | below floor | LUFS | TP | release |
+|---|---:|---:|---:|---:|---:|---|
+| T2 | 0 | 0 | 1 (30–60) | −13.94 (PASS) | −1.00 (PASS) | UNKNOWN |
+| T4 | 0 | 0 | 0 | −14.00 (PASS) | −1.00 (PASS) | UNKNOWN (side) |
+| T5 | 0 | 2 | 0 | −14.00 (PASS) | −3.58 (PASS) | UNKNOWN |
+
+`T4` is crest/floor PASS; T2 is UNKNOWN because the provisional floor is not
+met in 30–60 and the side threshold is not calibrated; T5 is UNKNOWN because
+30–60 is 6.3 vs 6.2 (inside the 0.35 margin) and 960–1920 is 2.8 vs 3.0 (inside
+the margin). None of the three is reported as a release PASS, which is the
+correct result while the side threshold and the floor are uncalibrated.
+
+The tests run after the fixes:
+
+```
+tests/test_metrics.py       10 passed
+tests/test_experiments.py    5 passed
+tests/test_crest_gate.py     3 passed
+tests/test_floor.py          3 passed
+tests/test_side.py           2 passed
+tests/test_lufs_tp.py        3 passed
+tests/test_engine.py        10 checks passed
+tests/test_tui.py           14 checks passed
+```
+
+What is still open: the production 30–60 band is 4096/1024 (D9); the side
+threshold is uncalibrated (D4); the floor is provisional (D3); the pre-echo
+docstring and the codec/JSON/CI work are still due (D14); and the constants
+`K_b`/`F_b` have not been recalibrated — they remain the hypothesis under test.
+The production tool now reports this instead of hiding it.
+
+---
+
+## 5. Reproducibility
 
 ### 4.1 Existing tests
 
@@ -288,7 +345,7 @@ If any of these do not match, the difference must be explained before the audit 
 
 ---
 
-## 5. Regression tests to add before Phase 5
+## 6. Regression tests to add
 
 | test file | assertions |
 |---|---|
@@ -305,7 +362,7 @@ The tests must use temp dirs and must not read the user's folders. They should b
 
 ---
 
-## 6. Sign-off
+## 7. Sign-off
 
 **Validated:**
 

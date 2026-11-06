@@ -40,9 +40,14 @@ def cmd_analyse(a):
         f = measure.features(x)
         print(measure.summary(f, p))
         if a.crest:
-            cr = measure.band_crest(x, np.array(m["crest_edges"]))
-            print("    crest by octave: " + " ".join(
-                f"{e:.0f}:{v:.1f}" for e, v in zip(m["crest_edges"], cr)))
+            d = measure.band_crest_detail(x, np.array(m["crest_edges"]))
+            parts = []
+            for i, v in enumerate(d["values"]):
+                txt = "--" if not np.isfinite(v) else f"{v:.1f}"
+                parts.append(f"{m['crest_edges'][i]:.0f}-"
+                             f"{m['crest_edges'][i + 1]:.0f}:{txt}"
+                             f"{'' if d['status'][i] == 'OK' else '?'}")
+            print("    crest by octave: " + " ".join(parts))
         if a.json_dir:
             import os
             name = os.path.splitext(os.path.basename(p))[0]
@@ -53,6 +58,18 @@ def cmd_analyse(a):
     return 0
 
 
+def _fmt(v, nd=1):
+    return "--" if v is None or not np.isfinite(v) else f"{v:.{nd}f}"
+
+
+def _lufs_status(value, target, tol=0.1):
+    return "PASS" if abs(value - target) <= tol else "FAIL"
+
+
+def _tp_status(value, target, tol=0.1):
+    return "PASS" if value <= target + tol else "FAIL"
+
+
 def cmd_check(a):
     m = metamod.get(a.meta)
     if m is None:
@@ -60,17 +77,36 @@ def cmd_check(a):
     for p in a.files:
         x, _ = measure.load(ingest.ingest(p)[0])
         f = measure.features(x)
+        edges = np.asarray(m["crest_edges"], dtype=float)
+        rep = measure.crest_report(x, edges, m["crest_max"], m["crest_min"])
+        side = measure.side_metrics(x, f_hi=m["mono_below"])
+        lstat = _lufs_status(f["lufs"], m["lufs"])
+        tstat = _tp_status(f["tp"], m["tp"])
         print(f"  {p}")
-        print(f"    LUFS {f['lufs']:.2f}  TP {f['tp']:.2f}  corr<100Hz {f['corr_low']:+.2f}")
+        print(f"    LUFS {f['lufs']:.2f} (target {m['lufs']:+.1f} +/-0.1): {lstat}")
+        print(f"    TP   {f['tp']:.2f} dBTP (limit {m['tp']:+.1f} +0.1 on max meter): {tstat}")
+        print(f"    side<{m['mono_below']:.0f} Hz: side/mid "
+              f"{_fmt(side['side_mid_db'])} dB, mono loss "
+              f"{_fmt(side['mono_loss_db'])} dB, corr "
+              f"{side['corr_low']:+.2f}  UNKNOWN (threshold not calibrated)")
+        print(f"    {'band':>14s} {'C':>6s} {'K':>5s} {'upper':>7s} "
+              f"{'F':>5s} {'lower':>7s}  status")
+        for i, r in enumerate(rep["bands"]):
+            lo, hi = r["band_hz"]
+            print(f"    {lo:6.0f}-{hi:<7.0f} {_fmt(r['C_db']):>6s} "
+                  f"{m['crest_max'][i]:5.1f} {r['upper']:>7s} "
+                  f"{m['crest_min'][i]:5.1f} {r['lower']:>7s}  {r['status']}")
+        print(f"    crest/floor: {rep['overall']} (margin {rep['tol_db']:.2f} dB)")
+        if rep["overall"] == "FAIL" or lstat == "FAIL" or tstat == "FAIL":
+            release = "FAIL"
+        elif rep["overall"] == "UNKNOWN":
+            release = "UNKNOWN"
+        else:
+            release = "UNKNOWN"  # side threshold not calibrated
+        print(f"    release: {release}")
         text, _ = devices.report(x, m)
+        print("    device model (synthetic, not a measurement):")
         print(text)
-        cr = measure.band_crest(x, np.array(m["crest_edges"]))
-        bad = [(e, v, mx) for e, v, mx in zip(m["crest_edges"],
-                                              cr, m["crest_max"])
-               if not np.isnan(v) and v > mx + 0.35]
-        if bad:
-            print("    over meta crest: " + ", ".join(
-                f"{e:.0f}Hz {v:.1f}>{mx:.1f}" for e, v, mx in bad))
         print()
     return 0
 
@@ -128,6 +164,7 @@ def cmd_master(a):
         deadband = a.deadband if a.deadband is not None else 0.0
         mono_below = a.mono_below if a.mono_below is not None else m["mono_below"]
         crest_max = tgt["crest_max"]
+        crest_min = tgt["crest_min"]
         crest_edges = tgt["crest_edges"]
         crest_from_target = False
         fit = a.fit_contour if a.fit_contour is not None else False
@@ -163,6 +200,7 @@ def cmd_master(a):
                       else tgt.get("mono_below", base_meta["mono_below"]))
         crest_edges = tgt.get("crest_edges", base_meta["crest_edges"])
         crest_max = tgt.get("crest_max", base_meta["crest_max"])
+        crest_min = tgt.get("crest_min", base_meta["crest_min"])
         crest_from_target = "crest_max" in tgt
         fit = True if a.fit_contour is None else a.fit_contour
 
@@ -179,8 +217,10 @@ def cmd_master(a):
         harsh_thr = 2.5 if a.harsh_thr is None else a.harsh_thr
         max_rough = a.max_rough
 
+    meta_only = bool(a.meta) and not (a.target or a.target_json)
+    deharsh = (not meta_only) if a.deharsh is None else a.deharsh
     p = dict(hpf=a.hpf, max_eq=a.max_eq, smooth_oct=a.smooth,
-             deharsh=not a.no_deharsh, harsh_thr=harsh_thr,
+             deharsh=deharsh, harsh_thr=harsh_thr,
              harsh_max=a.harsh_max, max_rough=max_rough,
              harsh_total=a.harsh_total, deadband=deadband,
              width=True, width_max=a.width_max,
@@ -256,34 +296,52 @@ def cmd_master(a):
         for i, c in enumerate(tgt["centers"]):
             print(f"  {c:7.0f} {sc_src[i]:7.1f} {sc_out[i]:7.1f} {dc[i]:+6.1f}   "
                   f"{f['width'][i]:6.1f}")
-        print(f"  contour preserved: max |d| {np.abs(dc).max():.2f} dB, "
-              f"rms {np.sqrt((dc ** 2).mean()):.2f} dB")
+        print(f"  contour change: max |d| {np.abs(dc).max():.2f} dB, "
+              f"rms {np.sqrt((dc ** 2).mean()):.2f} dB"
+              + ("" if deharsh else "  (deharsh off)"))
 
-    n_over = 0
+    n_over = n_unknown = n_floor = 0
     if crest_max is not None:
-        cre = measure.band_crest(y, np.asarray(crest_edges))
-        cr_src = measure.band_crest(x, np.asarray(crest_edges))
+        crest_rep = measure.crest_report(y, np.asarray(crest_edges),
+                                         np.asarray(crest_max),
+                                         None if crest_min is None
+                                         else np.asarray(crest_min))
+        src = measure.band_crest_detail(x, np.asarray(crest_edges))
         print()
-        print(f"  {'band':>14s} {'was':>6s} {'now':>6s} {'max':>6s}")
-        for i, e in enumerate(crest_edges[:-1]):
-            if np.isnan(cr_src[i]):
-                print(f"  {e:6.0f}-{crest_edges[i+1]:<7.0f} {'--':>6s} {'--':>6s} "
-                      f"{crest_max[i]:6.1f}  (no programme in source)")
-                continue
-            ok = "ok" if (np.isnan(cre[i]) or cre[i] <= crest_max[i] + 0.35) else "OVER"
-            n_over += ok == "OVER"
-            was = "--" if np.isnan(cr_src[i]) else f"{cr_src[i]:.1f}"
-            print(f"  {e:6.0f}-{crest_edges[i+1]:<7.0f} {was:>6s} {cre[i]:6.1f} "
-                  f"{crest_max[i]:6.1f}  {ok}")
+        print(f"  {'band':>14s} {'was':>6s} {'now':>6s} {'max':>6s} "
+              f"{'upper':>7s} {'floor':>6s} {'lower':>7s}  status")
+        for i, r in enumerate(crest_rep["bands"]):
+            was = ("--" if not np.isfinite(src["values"][i])
+                   else f"{src['values'][i]:.1f}")
+            now = "--" if r["C_db"] is None else f"{r['C_db']:.1f}"
+            n_over += r["upper"] == "FAIL"
+            n_floor += r["lower"] == "FAIL"
+            n_unknown += (r["status"] != "OK"
+                          or "UNKNOWN" in (r["upper"], r["lower"]))
+            fmin = ("--" if crest_min is None
+                    else f"{crest_min[i]:.1f}")
+            print(f"  {r['band_hz'][0]:6.0f}-{r['band_hz'][1]:<7.0f} "
+                  f"{was:>6s} {now:>6s} {crest_max[i]:6.1f} "
+                  f"{r['upper']:>7s} {fmin:>6s} {r['lower']:>7s}  "
+                  f"{r['status']}")
         eff = res["info"].get("crest_target_eff")
         if eff:
             print("  applied: " + "  ".join(
                 f"{crest_edges[i]:.0f}:{eff[i]:.1f}" for i in range(len(eff))))
-        print(f"  crest: {n_over} band(s) still over the meta")
+        print(f"  crest/floor: {crest_rep['overall']}; {n_over} over, "
+              f"{n_unknown} unknown, {n_floor} below floor "
+              f"(margin {crest_rep['tol_db']:.2f} dB)")
 
+    lstat = _lufs_status(f["lufs"], lufs_t)
+    tstat = _tp_status(f["tp"], a.ceiling)
+    side = measure.side_metrics(y, f_hi=mono_below)
     print()
-    print(f"  LUFS {f['lufs']:6.2f} (aim {lufs_t:.2f})   TP {f['tp']:6.2f}   "
-          f"LRA {f['lra']:5.2f}   corr<100 {f['corr_low']:+.2f}")
+    print(f"  LUFS {f['lufs']:6.2f} (aim {lufs_t:.2f}): {lstat}   "
+          f"TP {f['tp']:6.2f} dBTP (limit {a.ceiling:.2f}): {tstat}   "
+          f"LRA {f['lra']:5.2f}")
+    print(f"  side<{mono_below:.0f} Hz: side/mid {side['side_mid_db']:+.1f} dB, "
+          f"mono loss {side['mono_loss_db']:+.1f} dB, corr "
+          f"{side['corr_low']:+.2f}  UNKNOWN (threshold not calibrated)")
     if "mid_guard_db" in res["info"]:
         print(f"  mid guard: broad deviation {res['info']['mid_dev_before']:.1f} dB "
               f"-> corrected {res['info']['mid_guard_db']:.1f} dB (240-4000 Hz)")
@@ -295,6 +353,7 @@ def cmd_master(a):
                                         res["info"]["notches"].items()))
     print()
     text, tdev = devices.report(y, base_meta)
+    print("  device model (synthetic, not a measurement):")
     print(text)
     yd = y.astype(np.float64)
     rms = float(np.sqrt(np.mean(yd ** 2)))
@@ -305,7 +364,9 @@ def cmd_master(a):
         "kurt": (float(np.mean(yd ** 4) / var ** 2) if var > 0
                  else float("nan")),
         "lra": f["lra"], "tp": f["tp"],
-        "over": n_over if crest_max is not None else 0,
+        "lufs": f["lufs"], "lufs_status": lstat, "tp_status": tstat,
+        "over": n_over, "unknown": n_unknown, "floor": n_floor,
+        "side_mid": side["side_mid_db"],
         "phone": tdev["phone"]["shift_max"],
     }
     print(f"  written: {a.out}")
@@ -339,10 +400,11 @@ def cmd_master_all(a):
 
     print()
     print(f"  {'profile':>10s} {'crest':>6s} {'kurt':>6s} {'LRA':>6s} {'TP':>6s} "
-          f"{'over':>5s} {'phone':>6s}")
+          f"{'over':>5s} {'unk':>5s} {'side':>6s} {'phone':>6s}")
     for r in rows:
         print(f"  {r['profile']:>10s} {r['crest']:6.2f} {r['kurt']:6.2f} "
               f"{r['lra']:6.2f} {r['tp']:6.2f} {r['over']:5d} "
+              f"{r.get('unknown', 0):5d} {r.get('side_mid', float('nan')):6.1f} "
               f"{r['phone']:6.1f}")
     print("  written: " + ", ".join(f"{base}_{n}.wav" for n in names))
     return 0
@@ -437,6 +499,7 @@ def cmd_variants(a):
                 width=True, width_max=a.width_max, mono_below=m["mono_below"],
                 fit_contour=False, match_width=False,
                 crest_edges=tgt["crest_edges"], crest_max=cm_base,
+                crest_min=tgt["crest_min"],
                 crest_margin=0.0, bass_hz=a.bass_hz, sub_hz=a.sub_hz,
                 mid_guard=a.mid_guard,
                 eq_peak=a.eq_peak, ceiling=a.ceiling,
@@ -531,11 +594,13 @@ PROFILE_MAP = {"meta": "meta", "crest": "crest", "bass": "bass", "bass_hz": "bas
                "one_shot": "one_shot",
                "sub": "sub", "sub_hz": "sub_hz",
                "margin": "margin", "mono": "mono_below", "rough": "max_rough",
+               "deharsh": "deharsh",
                "harsh_total": "harsh_total"}
 PROFILE_DEFAULTS = {"meta": None, "mid_guard": None, "sub": None, "sub_hz": 90.0, "crest": 1.0, "bass": 1.0, "bass_hz": 240.0, "margin": 0.0,
                     "pull": 1.0, "eq_peak": None, "target_json": None,
                     "max_eq": 9.0,
                     "one_shot": False,
+                    "deharsh": None,
                     "mono_below": None, "max_rough": None, "harsh_total": 3.0}
 
 
@@ -673,7 +738,9 @@ def main(argv=None):
     q.add_argument("--smooth", type=float, default=1.0)
     q.add_argument("--deadband", type=float, default=None)
     q.add_argument("--iters", type=int, default=3)
-    q.add_argument("--no-deharsh", action="store_true")
+    q.add_argument("--deharsh", action=argparse.BooleanOptionalAction,
+                   default=None,
+                   help="automatic resonance notches (default: off in meta-only mode)")
     q.add_argument("--harsh-thr", type=float, default=None)
     q.add_argument("--harsh-max", type=float, default=4.0)
     q.add_argument("--harsh-total", type=float, default=8.0)

@@ -1,8 +1,9 @@
-"""Playback simulators: the only honest definition of "translates".
+"""Playback models: a synthetic definition of "translates".
 
-Every device is a cascade that can be measured. If the band balance of the
-master moves by more than a few dB inside any of them, the master does not
-translate -- no matter how it sounds on the monitors it was made on.
+These are hand-set filter/limiter cascades, not measurements of real devices.
+They are useful for finding a balance that survives a plausible device, but a
+model output is not a device measurement and the 6 dB threshold is a convention.
+See research/MASTERING_META_AUDIT.md.
 """
 import numpy as np
 from scipy.signal import butter, sosfilt
