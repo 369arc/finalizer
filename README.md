@@ -136,11 +136,13 @@ high crest into pre-echo.
 | 7680–15360 | 9.5 | |
 | 15360–20000 | 10.3 | plenty of air, no real limit |
 
-> **2026.1 calibration.** `7.7–15 kHz` sits at **8.0 dB** (confirmed by two
-> blind listening passes), `15–20 kHz` at **10.3 dB**. The table above is the
-> older device-law line; `python3 run.py meta` prints the active boundary. A candidate that also cut 15–20 kHz to 5.0 dB lost a blind
-> comparison on the only two tracks where that band carries programme, and was
-> dropped: cutting the top octave did not help.
+> **Model estimate, not a measurement.** The active boundary is
+> `6.2 / 6.2 / 6.2 / 6.2 / 6.2 / 6.2 / 7.2 / 8.3 / 8.0 / 10.3` at a 75 dB SPL
+> reference. The table above is the older device-law line; `python3 run.py meta`
+> prints the active one. Nothing here is calibrated by ear: listening is not
+> part of the argument yet. The top bands are the weakest link — a measurement
+> of real encoders (`research/pre_echo.py`) did **not** reproduce the codec
+> rationale for them at 96–128 kbps, so those numbers are unverified.
 
 **2. Crest floor.** 2.5 → 5 dB on the same bands. Below that it is no longer
 mastering, it is squashing.
@@ -165,6 +167,105 @@ value would mean one track's taste became law for all; that is why it lives in
 7.0 / 6.6 / 6.7 / 6.4 / 7.4 / 8.9 / 11.3 / 9.1 dB. The device law: 6.2 up to
 ~2 kHz, then rising. They match — the catalogue already lives at the devices'
 limit, and the meta merely formalises what the ear found on its own.
+
+## Formal definition
+
+Let `x(t)` be a stereo signal at 48 kHz, analysed by STFT (window 4096, hop
+1024). Split it into octave bands with edges
+
+```
+E = {30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000} Hz
+```
+
+For band `b`, let `E_b(n)` be the band power in frame `n`, in dB.
+
+**Body** — the stable part of the envelope:
+
+```
+B_b = P75(E_b)
+```
+
+**Crest** — the peak above the body:
+
+```
+C_b = P99.5(E_b) − P75(E_b)
+```
+
+Both are order statistics of the same envelope, so they are orthogonal by
+construction: a cap on `C_b` does not move `B_b`.
+
+**The meta is an admissible set**, not a target curve. A master `y` is inside
+it when
+
+```
+C_b(y) ≤ K_b     for every band b        crest ceiling
+C_b(y) ≥ F_b     for every band b        crest floor
+L(y)    = L₀ = −14 LUFS                  integrated loudness, ITU-R BS.1770-4
+TP(y)  ≤ T₀ = −1 dBTP                    true peak, 4x oversampled
+side(y) = 0 below f_m = 120 Hz           mono fold-down
+```
+
+Nothing else is regulated — in particular the contour `B_b` and the stereo
+width are free.
+
+### What each number is, and how solid it is
+
+| quantity | value | status |
+|---|---|---|
+| `K_b`, 30–1920 Hz | 6.2 dB | **assumption**: "about 6 dB of limiter headroom" |
+| `K_b`, 1920–3840 | 7.2 | model estimate |
+| `K_b`, 3840–7680 | 8.3 | model estimate |
+| `K_b`, 7680–15360 | 8.0 | model estimate, **unverified** |
+| `K_b`, 15360–20000 | 10.3 | model estimate |
+| `F_b` | 2.5 → 5.0 | craft floor, no derivation |
+| `L₀` | −14 LUFS | platform convention |
+| `T₀` | −1 dBTP | convention (inter-sample headroom) |
+| `f_m` | 120 Hz | physics of folding to one speaker |
+
+### The open problem: `K_b`
+
+The ceiling is the largest crest at which degradation on a device stays below
+the audibility threshold:
+
+```
+K_b = sup { c : D_b(c) < ε }
+```
+
+Everything in the meta reduces to what `D_b` is taken to be:
+
+- **dynamics** — power compression at a reference SPL;
+- **codec** — pre-echo spread across the MDCT window;
+- **perception** — preference in a blind comparison.
+
+Each mechanism gives its own `K_b`; the meta should take the minimum.
+
+Today `D_b` is a **qualitative** model: limiter headroom below ~2 kHz,
+codec pre-echo above. It fixes the shape, not the constants.
+
+### What measurement says so far
+
+`research/pre_echo.py` builds "body → quiet gap → burst", encodes it with AAC
+(128/96/64/48/32 kbps) and Opus (96 kbps), and measures what the codec adds to
+the gap before the burst. Up to **21 dB** crest the residue stays **27–38 dB
+below the body**; with a competing −0 dBFS bed it rises to at most +3.5 dB, still
+27 dB below the body. At 48 and 32 kbps the band is dropped rather than smeared.
+
+So at typical bitrates the codec does **not** bind: `D_b` stays far below `ε`
+for any realistic `C_b`. The top-band ceiling is therefore neither derived from
+nor supported by the codec, and it is the weakest number in the meta.
+
+### The experiment that would close it
+
+A reference SPL (75 and 85 dB), a signal with per-band controllable crest, and
+per-band power compression measured on the device; a 2 dB compression criterion,
+as in M-Noise.
+
+```
+K_b(SPL) = max { c : compression_b(c) ≤ 2 dB }
+```
+
+Then every `K_b` becomes a measurement on a device class, and codec behaviour
+and taste enter as separate terms instead of standing in for physics.
 
 ## Free contour — the main mode
 
@@ -283,8 +384,8 @@ measured, and the result reduced to a single filter — 0.44 dB rms across bands
 above the meta, `phone` is the balance shift on a phone.
 
 `--crest` scales the ceiling everywhere (control), `--bass` only below `bass_hz`
-(the body). Earlier tests chose `crest 0.8 / bass 0.7`; the 2026.1 listening test
-preferred the full boundary (`1.0 / 1.0`): more open, more space, more alive.
+(the body). The profiles sit on the boundary itself (`1.0 / 1.0`): the three
+pressures differ by colouring, not by how far below the ceiling they sit.
 The default profiles now sit at the boundary. Any CLI flag overrides the
 profile; an axis named in a `variants` grid replaces the profile value for that
 axis only.

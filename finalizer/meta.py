@@ -39,7 +39,7 @@ CENTERS = [25.0, 31.5, 39.7, 50.0, 63.0, 79.4, 100.0, 126.0, 158.7, 200.0,
 CREST_EDGES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000]
 
 # Ceiling: device headroom (excursion below, codec pre-echo above).
-CREST_MAX = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 9.5, 10.3]
+CREST_MAX = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
 
 # Floor: past this you are not mastering, you are squashing.
 CREST_MIN = [2.5, 2.5, 2.5, 3.0, 3.0, 3.0, 3.5, 4.0, 4.5, 5.0]
@@ -48,15 +48,15 @@ LUFS = -14.0
 TP = -1.0
 MONO_BELOW = 120.0
 
-# The calibrated boundary. There used to be two names for it; only one was
-# ever used, so the second is gone -- two names for the same job is a trap.
+# The boundary. There used to be two names for it; only one was ever used, so
+# the second is gone -- two names for the same job is a trap.
 CREST_MAX_CALIBRATED = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
 
 META = {
     "name": "meta",
     "centers": CENTERS,
     "crest_edges": CREST_EDGES,
-    "crest_max": CREST_MAX_CALIBRATED,
+    "crest_max": CREST_MAX,
     "crest_min": CREST_MIN,
     "lufs": LUFS,
     "tp": TP,
@@ -65,11 +65,9 @@ META = {
 
 META_REGISTRY = {"meta": META}
 
-# 7.7-15 kHz = 8.0 dB was confirmed by two blind listening passes: one where
-# the two candidates were identical, and one where the change actually engaged
-# and was clearly preferred over 9.5. A third candidate cut 15-20 kHz to 5.0 dB
-# and lost the same test on the only two tracks where that band carries
-# programme, so it is gone: cutting the top octave did not help.
+# Listening is deliberately absent from this file: a preference is not a
+# boundary. Blind comparisons exist in the project history, but they are not
+# part of the argument here until a device measurement replaces the estimate.
 DEFAULT_META = "meta"
 
 
@@ -78,9 +76,10 @@ def get(name=None):
     return META_REGISTRY.get(name or DEFAULT_META)
 
 NOTES = {
-    "crest_max": "Device limiter/excursion headroom below ~2 kHz; above it "
-                 "measured pre-echo of real codecs no longer supports it; "
-                 "8.0 dB at 7.7-15 kHz came from listening.",
+    "crest_max": "Model estimate at a 75 dB SPL reference: limiter headroom "
+                 "and excursion below ~2 kHz, codec pre-echo above. The codec "
+                 "part is unverified -- measured encoders did not reproduce "
+                 "that limit at 96-128 kbps.",
     "crest_min": "2.5-5 dB. Below this a band is static, not dynamic.",
     "lufs": "-14 LUFS: streaming normalises here; louder buys nothing.",
     "tp": "-1 dBTP, measured at 4x oversampling, not sample peak.",
