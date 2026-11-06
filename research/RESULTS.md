@@ -28,7 +28,7 @@ The measurements are read-only with respect to the source files. The scripts wro
 
 ## 2. Corpus
 
-Five finished stereo masters, 48 kHz, float32/24-bit:
+Five finished stereo masters, 48 kHz, float32/24-bit. The labels `T1`–`T5` are anonymised; the mapping to source files is not stored in the repository.
 
 | label | duration | use |
 |---|---:|---|
@@ -212,7 +212,7 @@ Across 10 s segments of the five tracks:
 | 15360–20000 | −0.12 |
 | **pooled** | **−0.36** |
 
-![Body vs crest](figures/fig5_body_crest.png)
+![Per-band body–crest correlation](figures/fig5_body_crest.png)
 
 The negative correlation is systematic: a louder body is associated with a smaller relative tail; a quieter body with a larger relative tail. B and C are not independent. The claim “orthogonal by construction” is rejected.
 

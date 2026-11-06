@@ -100,10 +100,10 @@ async def main():
         print("7. enter after done -> profiles again")
 
         opened.clear()
-        await pilot.press("\u0449")          # 'o' on a Cyrillic layout
+        await pilot.press("\u0449")     # Cyrillic layout, US position 'o'
         await pilot.pause()
         assert opened == [str(SRC)], opened
-        print("8. cyrillic '\u0449' opens like 'o'")
+        print("8. Cyrillic layout 'o' opens the file")
 
         await pilot.press("escape")
         await pilot.pause()

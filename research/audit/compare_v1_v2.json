@@ -1845,7 +1845,7 @@
   "v2_mask_frames_after": 8217
  },
  "control": {
-  "CHIRO_first30s": {
+  "T2_first30s": {
    "v1_body_base_of_chain": [
     51.076,
     37.532,

@@ -7,9 +7,9 @@ Every measured table in research/V1_VS_V2.md is backed by a key of that JSON; th
 the commits, the function fingerprints, the environment and the commands.
 
     python3 research/audit/compare_v1_v2.py \\
-        --tracks T2=/path/to/corpus/T2/T2.wav \\
-                 T4=/path/to/corpus/T4/T4.wav \\
-                 T5=/path/to/corpus/T5/T5\\ OTHER.wav \\
+        --tracks T2=/path/to/T2.wav \\
+                 T4=/path/to/T4.wav \\
+                 T5=/path/to/T5.wav \\
         --work /tmp/opencode/fin_compare \\
         --out research/audit/compare_v1_v2.json
 
@@ -544,18 +544,18 @@ def main(argv=None):
         sf.write(p, burst_signal(dur, bs), SR, subtype="FLOAT")
         files[name] = str(p)
         bursts[name] = {"dur_s": dur, "burst_s": bs}
-    chiro = load_f32(tracks["T2"])
+    track2 = load_f32(tracks["T2"])
     s0 = int(100 * SR)
-    click = chiro.copy()
+    click = track2.copy()
     click[s0:s0 + int(0.05 * SR)] *= 10 ** (30 / 20)
-    cp = sig_dir / "CHIRO_click_plus30dB_50ms_at100s.wav"
+    cp = sig_dir / "T2_click_plus30dB_50ms_at100s.wav"
     sf.write(cp, click, SR, subtype="FLOAT")
-    files["CHIRO_click_plus30dB_50ms_at100s"] = str(cp)
-    c30 = sig_dir / "CHIRO_first30s.wav"
-    sf.write(c30, chiro[:30 * SR], SR, subtype="FLOAT")
-    ctrl_files = {"CHIRO_first30s": str(c30),
+    files["T2_click_plus30dB_50ms_at100s"] = str(cp)
+    c30 = sig_dir / "T2_first30s.wav"
+    sf.write(c30, track2[:30 * SR], SR, subtype="FLOAT")
+    ctrl_files = {"T2_first30s": str(c30),
                   "burst_30s_500ms": files["burst_30s_500ms"]}
-    del chiro, click
+    del track2, click
 
     sines_dir = work / "sines"
     sines_dir.mkdir(exist_ok=True)
@@ -705,13 +705,13 @@ def main(argv=None):
         })
     result["bursts"] = burst_rows
 
-    x = load_f32(files["CHIRO_click_plus30dB_50ms_at100s"])
+    x = load_f32(files["T2_click_plus30dB_50ms_at100s"])
     xs = load_f32(tracks["T2"])
     Eb, eb = env_grid(xs)
     Ec, ec = env_grid(x)
     pb, pc = population(Eb, eb), population(Ec, ec)
-    a1b, a1c = est1["T2"], est1["CHIRO_click_plus30dB_50ms_at100s"]
-    a2b, a2c = est2["T2"], est2["CHIRO_click_plus30dB_50ms_at100s"]
+    a1b, a1c = est1["T2"], est1["T2_click_plus30dB_50ms_at100s"]
+    a2b, a2c = est2["T2"], est2["T2_click_plus30dB_50ms_at100s"]
     result["outlier_click"] = {
         "description": "T2 with +30 dB, 50 ms, all bands, at 100 s",
         "v1_C_before": a1b["band_crest"], "v1_C_after": a1c["band_crest"],

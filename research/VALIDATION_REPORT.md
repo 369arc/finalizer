@@ -30,7 +30,7 @@ The suites are smoke tests. They prove that the program does not crash on a 2 s 
 
 ### 1.2 New validation measurements
 
-These were performed read-only on the five finished masters and on synthetic signals. The methods are in `RESULTS.md` and `METRIC_SPECIFICATION.md`.
+These were performed read-only on the five finished masters (anonymised as `T1`–`T5`) and on synthetic signals. The methods are in `RESULTS.md` and `METRIC_SPECIFICATION.md`.
 
 | # | check | result | status |
 |---|---|---|---|

@@ -61,9 +61,10 @@ def main():
     fig.savefig(os.path.join(a.out, "fig1_crest_vs_meta.png"))
     plt.close(fig)
 
-    # fig2 window
+    # fig2 window: the two tracks discussed in the text
+    focus = [n for n in ("T2", "T4") if n in c["tracks"]] or list(c["tracks"])[:2]
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.5), sharey=True)
-    for ax, name in zip(axes, list(c["tracks"])[:2]):
+    for ax, name in zip(axes, focus):
         t = c["tracks"][name]
         for n, vals in t["window"].items():
             ax.plot(x, vals, "o-", ms=3, lw=1.2, label=f"N={n}")
@@ -78,7 +79,7 @@ def main():
 
     # fig3 duration
     fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.4), sharey=True)
-    for ax, name in zip(axes, list(c["tracks"])[:2]):
+    for ax, name in zip(axes, focus):
         t = c["tracks"][name]
         keys = list(t["duration"])
         for b in (0, 5, 8, 9):
@@ -94,7 +95,7 @@ def main():
     plt.close(fig)
 
     # fig4 bootstrap
-    names = list(c["tracks"])[:2]
+    names = focus
     fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.4), sharey=True)
     for ax, name in zip(axes, names):
         t = c["tracks"][name]
@@ -124,7 +125,7 @@ def main():
         ax.set_ylabel("Pearson r(B, C)")
         ax.set_title("Body and crest are not independent (10 s segments)")
         ax.legend(fontsize=7, frameon=False, ncol=2)
-        fig.savefig(os.path.join(a.out, "fig5_body_crest_bars.png"))
+        fig.savefig(os.path.join(a.out, "fig5_body_crest.png"))
         plt.close(fig)
 
     # fig6 side

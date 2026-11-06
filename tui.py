@@ -133,8 +133,10 @@ AUDIO_EXT = {
 }
 # The TUI never reads text, so the keyboard layout must not matter: every
 # printable key is translated back to its US position before it is matched.
-# Russian \u0419\u0426\u0423\u041a\u0415\u041d; other layouts leave ASCII alone, and special keys (arrows,
-# enter, space) are layout-independent by definition.
+# The mapping below covers the Cyrillic keyboard layout; other layouts leave
+# ASCII alone, and special keys (arrows, enter, space) are layout-independent
+# by definition. The Cyrillic keys are written as Unicode escapes so the
+# source stays ASCII.
 _LAYOUT = {
     "\u0439": "q", "\u0446": "w", "\u0443": "e", "\u043a": "r", "\u0435": "t", "\u043d": "y", "\u0433": "u",
     "\u0448": "i", "\u0449": "o", "\u0437": "p", "\u0445": "[", "\u044a": "]",
@@ -553,7 +555,7 @@ class FinalizerTUI(App):
         return True
 
     def on_key(self, event) -> None:
-        """Any layout behaves as US: '\u0449' is 'o', '\u0439' is 'q'."""
+        """Any layout behaves as US: Cyrillic 'o' is 'o', Cyrillic 'q' is 'q'."""
         key = event.key
         if self._pending_delete is not None:
             event.stop()

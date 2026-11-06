@@ -138,8 +138,8 @@ no SPL calibration. The codec pre-echo rationale for the top bands was first
 tested with a probe that had a window error and dB averaging; the first
 negative result is **withdrawn**, and the corrected probe re-opens the question
 (`research/V1_VS_V2.md` §6.9). The five finished masters used in
-the audit do not reproduce the old catalogue medians either. Treat the table as
-a starting point for the experiments, not as a norm.
+the audit (anonymised as `T1`–`T5`) do not reproduce the old catalogue medians
+either. Treat the table as a starting point for the experiments, not as a norm.
 
 **2. Crest floor.** 2.5 → 5.0 dB, a provisional craft judgment. The floor is
 reported by `check` and by `master`; a floor failure is shown as `UNKNOWN`

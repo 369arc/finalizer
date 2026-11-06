@@ -38,7 +38,7 @@ Most of the problems below live at the boundary between (2) and (3).
 ### Evidence used
 
 - Static inspection of `finalizer/meta.py`, `measure.py`, `chain.py`, `dsp.py`, `devices.py`, `ingest.py`, `run.py`, `research/pre_echo.py`, `tests/`.
-- Five finished masters supplied by the author: `T1`, `T2`, `T3`, `T4`, `T5` (48 kHz, stereo, 110–204 s; see `RESULTS.md` for durations and paths). They are a convenience sample, not a representative corpus.
+- Five finished masters supplied by the author, anonymised as `T1`–`T5` (48 kHz, stereo, 110–204 s; see `RESULTS.md` for durations). The mapping to source files is not stored in the repository. They are a convenience sample, not a representative corpus.
 - Synthetic signals with known crest, known band content, known side content, and deliberately inserted bursts/clicks.
 - Cross-checks against `ffmpeg` 8.1.3 `ebur128=peak=true` for integrated loudness and true peak.
 - ITU-R BS.1770-4 (10/2015), Annex 2 for true peak; EBU Tech 3342 for LRA; AES75-2023 for the M-Noise/Music-Noise 2 dB compression procedure (used only as a reference, not as a definition of `K_b`).

@@ -23,10 +23,13 @@ masters (or any files):
   "T1": "/path/to/T1.wav",
   "T2": "/path/to/T2.wav",
   "T3": "/path/to/T3.wav",
-  "T4":     "/path/to/T4.wav",
-  "T5":  "/path/to/T5.wav"
+  "T4": "/path/to/T4.wav",
+  "T5": "/path/to/T5.wav"
 }
 ```
+
+The labels are anonymised; they are not the source file names. Keep the
+manifest outside the repository.
 
 All files must be 48 kHz stereo. The scripts do not modify them.
 

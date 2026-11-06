@@ -791,5 +791,5 @@
    "attenuation_db": -0.7
   }
  ],
- "note": "fallback values from research/RESULTS.md; per-track correlations are the pooled per-band values, not the per-track values."
+ "note": "fallback values from research/RESULTS.md; per-track correlations are the pooled per-band values, not the per-track values. Track labels are anonymised; the mapping is not stored in the repository."
 }

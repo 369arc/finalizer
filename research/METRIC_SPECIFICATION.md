@@ -87,7 +87,7 @@ w[n] = 0.5 - 0.5 cos(2π n / N_b),  n = 0 … N_b - 1
 
 The signal is padded by `N_b` zeros at both ends. The frame starts at `m H_b`, `m = 0 … M_b − 1`, with `M_b = 1 + floor((N_s + 2N_b − N_b) / H_b)`.
 
-**Why multi-resolution.** At `N = 4096`, 30–60 Hz has three bins and the measured crest of `Y` moves by 5.4 dB between `N = 4096` and `N = 16384`. A single window cannot be both narrow in time for the top octave and narrow in frequency for the bottom octave. The multi-resolution rule is the minimum needed to make the low bands meaningful. The cost is that the low bands have a 341 ms window; the time resolution must be stated.
+**Why multi-resolution.** At `N = 4096`, 30–60 Hz has three bins and the measured crest of `T4` (an anonymised corpus item) moves by 5.4 dB between `N = 4096` and `N = 16384`. A single window cannot be both narrow in time for the top octave and narrow in frequency for the bottom octave. The multi-resolution rule is the minimum needed to make the low bands meaningful. The cost is that the low bands have a 341 ms window; the time resolution must be stated.
 
 **Alternative.** A constant-Q filterbank with 1/12-octave resolution and a stated time response is acceptable, but it must be documented and compared with the STFT on a test signal. The current code's 4096/1024 is not acceptable for 30–60.
 
@@ -537,7 +537,7 @@ This table is the bridge between the specification and the code at `af04531`. It
 | `C_tail` on active frames | gated `P99.5 − P75` | not the written statistic; 50 dB burst → 0.38 dB |
 | `N_A ≥ 1000` | `len(act) > 20` | 21 frames accepted; short events → `NaN` |
 | `UNKNOWN` | `NaN` treated as `ok` in `check`/`master` | unassessed band can pass |
-| one body for B and C | 4096/1024 vs 16384/4096 | contours differ by up to 5 dB (29 dB at 30–60 on `Y`) |
+| one body for B and C | 4096/1024 vs 16384/4096 | contours differ by up to 5 dB (29 dB at 30–60 on `T4`) |
 | `F_b` check | `crest_min` never used | floor is decorative |
 | `side` criterion | 3rd-order high-pass | not zero; −3 dB at 120, −18 dB at 60 |
 | `TP` Annex 2 | `resample_poly` | 0.5 dB under-read on HF sines |
