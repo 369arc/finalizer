@@ -288,6 +288,11 @@ met in 30–60 and the side threshold is not calibrated; T5 is UNKNOWN because
 the margin). None of the three is reported as a release PASS, which is the
 correct result while the side threshold and the floor are uncalibrated.
 
+The new broadband mask reduced the crest-stage body drop on the 30 s T2
+excerpt from −2.09 to −1.85 dB at 15–20 kHz; it did not eliminate it. The
+`P75` claim is now “approximately preserved for small cuts”, not “by
+construction”.
+
 The tests run after the fixes:
 
 ```
