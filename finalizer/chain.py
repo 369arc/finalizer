@@ -2,8 +2,9 @@
 
 Order matters and is chosen for cleanliness, not for effect:
 
-    HPF -> contour EQ (min-phase) -> presence bell -> resonance suppression
-        -> stereo width -> band crest -> loudness -> slow limiter -> TP trim
+    HPF -> contour EQ (min-phase) -> resonance suppression -> stereo width
+        -> band crest -> midrange guard -> presence bell (optional)
+        -> loudness -> slow limiter -> TP trim
 
 Every stage is either linear time-invariant and minimum-phase, or slow.
 Nothing here can pump, ring before a transient, or alias. "Linear" here means

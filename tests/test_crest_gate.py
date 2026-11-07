@@ -38,11 +38,6 @@ def test_new_gate_sees_burst():
     assert d["values"][8] > 40, d["values"]
 
 
-def test_legacy_gate_hides_burst():
-    c = measure.band_crest_legacy(make_burst(0.5), EDGES)
-    assert not np.isfinite(c[8]) or c[8] < 5, c
-
-
 def test_new_gate_unknown_on_short_file():
     x = make_burst(0.5, dur=2.0)
     d = measure.band_crest_detail(x, EDGES, min_frames=1000)

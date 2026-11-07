@@ -25,3 +25,4 @@ __pycache__/
 
 # kept locally, never pushed
 README.ru.md
+/v0.3.0.md

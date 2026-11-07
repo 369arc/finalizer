@@ -3,7 +3,6 @@
 These are hand-set filter/limiter cascades, not measurements of real devices.
 They are useful for finding a balance that survives a plausible device, but a
 model output is not a device measurement and the 6 dB threshold is a convention.
-See research/MASTERING_META_AUDIT.md.
 """
 import numpy as np
 from scipy.signal import butter, sosfilt

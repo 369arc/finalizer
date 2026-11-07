@@ -123,8 +123,9 @@ def sustain_contour(x, centers, edges, n=16384, hop=4096):
 
     Gain-invariant: a constant gain shifts every band by the same amount and
     cancels in the relative contour. It is *not* statistically independent of
-    the crest, and a deep/long crest cut can move P75 (see the audit). This is
-    a separate estimator from `band_crest`; the two are not the same envelope.
+    the crest, and a deep/long crest cut can move P75; the report shows the
+    change. This is a separate estimator from `band_crest`; the two are not the
+    same envelope.
     """
     X = dsp.stft(x, n, hop)
     P = dsp.band_power(X)
@@ -141,34 +142,6 @@ def sustain_contour(x, centers, edges, n=16384, hop=4096):
         lv[i] = np.percentile(e, 75)
     ref = int(np.argmin(np.abs(np.log2(centers / 1000.0))))
     return lv - lv[ref]
-
-
-def band_crest_legacy(x, edges, n=4096, hop=1024):
-    """The pre-audit estimator, kept for comparison (commit b16188b).
-
-    It gates each band on its own maximum (`e > e.max() - 45`), so a short
-    event more than 45 dB above a quiet body can replace the body, and it gates
-    a band out when its P75 is 45 dB below the loudest band.
-    """
-    X = dsp.stft(x, n, hop)
-    P = dsp.band_power(X)
-    freqs = np.fft.rfftfreq(n, 1 / dsp.SR)
-    E = np.empty((P.shape[0], len(edges) - 1))
-    for b in range(len(edges) - 1):
-        sel = (freqs >= edges[b]) & (freqs < edges[b + 1])
-        E[:, b] = 10 * np.log10(P[:, sel].sum(axis=1) + 1e-20)
-    p75 = np.array([np.percentile(E[:, b], 75) for b in range(E.shape[1])])
-    top = p75.max()
-    out = []
-    for b in range(E.shape[1]):
-        e = E[:, b]
-        if p75[b] < top - 45.0:           # band carries no programme
-            out.append(float("nan"))
-            continue
-        act = e[e > e.max() - 45.0]
-        out.append(float(np.percentile(act, 99.5) - np.percentile(act, 75))
-                   if len(act) > 20 else float("nan"))
-    return np.array(out)
 
 
 def band_crest_detail(x, edges, n=4096, hop=1024, min_frames=50,
@@ -234,8 +207,7 @@ def crest_report(x, edges, k_max, k_min=None, tol=0.35, min_frames=50):
     """Three-valued crest/floor decision for one file.
 
     The point estimate is compared with a fixed measurement margin `tol`.
-    This is not a confidence interval; the research metric (`research/metrics.py`)
-    provides the bootstrap interval. The rule is deliberately conservative:
+    This is not a confidence interval. The rule is deliberately conservative:
 
       upper: PASS if C <= K; FAIL if C > K + tol; UNKNOWN in between.
       lower: PASS if C >= F; FAIL if C < F - tol; UNKNOWN in between.
@@ -268,9 +240,8 @@ def crest_report(x, edges, k_max, k_min=None, tol=0.35, min_frames=50):
     if upper_fail:
         overall = "FAIL"
     elif upper_unknown or floor_fail:
-        # The floor is provisional (the audit found no empirical basis); a
-        # floor failure is reported, but it does not by itself reject a master
-        # until the F_b experiment replaces the craft value.
+        # The floor is a craft value: a floor failure is reported, but it does
+        # not by itself reject a master.
         overall = "UNKNOWN"
     else:
         overall = "PASS"

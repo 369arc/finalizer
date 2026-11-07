@@ -79,7 +79,7 @@ def lra(x, sr=SR):
 
 
 def true_peak_poly(x, os=4):
-    """Generic polyphase 4x true peak, dBTP (the pre-audit meter)."""
+    """Generic polyphase 4x true peak, dBTP."""
     xx = x if x.ndim > 1 else x[:, None]
     peak = 0.0
     step = 1 << 20

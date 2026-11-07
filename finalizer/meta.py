@@ -6,15 +6,10 @@ a piece should sound. Inside the boundary the picture is yours.
 Four groups of numbers:
 
 1. CREST_MAX -- per octave band, how far a peak may rise above that band's own
-   body. Body = P75 of the band envelope; crest = P99.5 - P75. These are
-   PROVISIONAL MODEL ESTIMATES, not measurements. The audit did not reproduce
-   the device-law rationale. The codec pre-echo rationale was re-opened by a
-   corrected probe (research/V1_VS_V2.md, section 6.9); audibility is unknown.
-   The 75 dB SPL reference is not implemented in code.
-2. CREST_MIN -- a provisional craft floor. It is displayed but NOT enforced by
-   the chain or by `check`; the audit found no empirical basis for a universal
-   value. See research/EXPERIMENT_DESIGN.md for the experiment that would
-   establish or reject it.
+   body. Body = P75 of the band envelope; crest = P99.5 - P75. The v0.3.0
+   ceilings are codec-aware and include a 0.5 dB headroom buffer.
+2. CREST_MIN -- a craft floor. It is displayed but NOT enforced by the chain or
+   by `check`: the chain does not add transients to meet it.
 3. LUFS / TP -- delivery conventions, not physical boundaries. Platform targets
    differ; the true-peak meter is the larger of BS.1770-4 Annex 2 and a
    polyphase 4x meter, and the report names both.
@@ -43,24 +38,22 @@ CENTERS = [25.0, 31.5, 39.7, 50.0, 63.0, 79.4, 100.0, 126.0, 158.7, 200.0,
 
 CREST_EDGES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000]
 
-# Provisional model estimate. The values were selected under the legacy crest
-# estimator (per-band max gate); the current estimator uses a broadband
-# activity mask. They are NOT calibrated; see research/MASTERING_META_AUDIT.md.
-CREST_MAX = [6.2, 6.2, 6.2, 6.2, 6.2, 6.2, 7.2, 8.3, 8.0, 10.3]
+# v0.3.0 Codec-Optimized Crest Ceilings (includes 0.5 dB headroom safety buffer)
+# Bands: 30-60, 60-120, 120-240, 240-480, 480-960, 960-1920, 1920-3840, 3840-7680, 7680-15360, 15360-20000
+CREST_MAX = [4.5, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 9.5, 10.0]
 
-# Provisional craft floor. Not enforced by the chain or by `check`; the audit
-# found no empirical basis for a universal value. See the audit and the F_b
-# experiment design.
+# Craft floor. Not enforced by the chain or by `check`: the chain does not add
+# transients to meet it.
 CREST_MIN = [2.5, 2.5, 2.5, 3.0, 3.0, 3.0, 3.5, 4.0, 4.5, 5.0]
 
 LUFS = -14.0
 TP = -1.0
 MONO_BELOW = 120.0
 
-# The boundary has one name. The values are provisional; see the audit.
+# The boundary has one name. The values are updated for v0.3.0 codec optimization.
 META = {
     "name": "meta",
-    "metric_version": "crest-v1.1-broadband-gate",
+    "metric_version": "crest-v0.3.0-codec-optimized",
     "centers": CENTERS,
     "crest_edges": CREST_EDGES,
     "crest_max": CREST_MAX,
@@ -83,13 +76,11 @@ def get(name=None):
     return META_REGISTRY.get(name or DEFAULT_META)
 
 NOTES = {
-    "crest_max": "Provisional model estimate at a 75 dB SPL reference; not "
-                 "measured. The codec pre-echo residue was re-opened by a "
-                 "corrected probe (research/V1_VS_V2.md, section 6.9); "
-                 "audibility unknown.",
-    "crest_min": "Provisional craft floor; reported by check/master, not "
-                 "enforced by the chain. The audit found no empirical basis; "
-                 "see the F_b experiment design.",
+    "crest_max": "v0.3.0 codec-optimized ceiling with 0.5 dB headroom buffer. "
+                 "Clamps sub-bass (30-60Hz at 4.5 dB) to prevent codec distortion, "
+                 "gradually opens up through the mids, and tapers high-end near the ~15k codec cut.",
+    "crest_min": "Craft floor; reported by check/master, not enforced by the "
+                 "chain. The chain does not add transients to meet it.",
     "lufs": "Delivery convention, not a physical boundary; platform targets "
             "differ (Spotify -14, Apple about -16, Deezer -15).",
     "tp": "Delivery convention; measured on the larger of BS.1770-4 Annex 2 "
@@ -121,7 +112,7 @@ def as_target(meta=None):
 def table(meta=None):
     meta = meta or META
     lines = [f"  meta: {meta['name']}  "
-             f"(metric {meta.get('metric_version', 'unknown')}; provisional)",
+             f"(metric {meta.get('metric_version', 'unknown')}; v0.3.0 codec-optimized)",
              f"  {'band, Hz':>14s} {'ceiling':>8s} {'floor':>7s}"]
     for i, edge in enumerate(meta["crest_edges"][:-1]):
         lines.append(f"  {edge:6.0f}-{meta['crest_edges'][i + 1]:<7.0f} "

@@ -24,25 +24,27 @@ bass_hz = 240.0
 deharsh = false
 
 [mid]
-# the balance chosen by ear: one broad bell, +4.5 dB at 1 kHz, Q 0.4.
-# It lifts the 300 Hz-3 kHz zone the ear reads as body and presence, and it
-# does so without generating a single harmonic. Fixed shape: same correction
-# on any material, no dependence on the track's own curve.
+# the same one-pass projection toward the speech-shaped contour as [high],
+# applied at half strength: pull 0.5. Ceiling, guard, notches and max_eq are
+# identical -- only how far the track moves toward the target differs.
 meta = "meta"
 crest = 1.0
 bass = 1.0
 bass_hz = 240.0
 mid_guard = 4.0
-eq_peak = [1000.0, 4.5, 0.4]
 deharsh = true
+target = "references/speech_ltass.json"
+pull = 0.5
+one_shot = true
+max_eq = 12.0
 
 [high]
-# the strength knob is max_eq, not pull: the difference is projected toward a
-# speech-shaped contour (LTASS) in ONE pass, and whatever reaches the ceiling
-# is removed by loudness normalisation -- what survives is the part that did
-# not. max_eq 12 gives a +5.8 dB bell, max_eq 9 gives +3.3.
-# Unlike [mid] this depends on the track's own contour: on dark material it
-# also lifts the air (+13 dB at 10 kHz on dark material).
+# the full-strength version of [mid]: the contour difference is projected
+# toward the speech curve in ONE pass at pull 1.0. The strength knob is max_eq,
+# not pull: the difference hits the ceiling at both edges, loudness
+# normalisation removes the constant part, and what survives is the part that
+# did not reach the ceiling. max_eq 12 gives a +5.8 dB bell, max_eq 9 gives +3.3.
+# On dark material this also lifts the air (+13 dB at 10 kHz on dark material).
 meta = "meta"
 crest = 1.0
 bass = 1.0

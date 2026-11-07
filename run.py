@@ -685,7 +685,7 @@ def main(argv=None):
                    help="max broad deviation in 240-4000 Hz, dB (None = off)")
     q.add_argument("--eq-peak", type=float, nargs=3, default=None,
                    metavar=("HZ", "DB", "Q"),
-                   help="one broad bell applied before everything, e.g. 1000 4.5 0.4")
+                   help="one broad static bell after the crest stage, e.g. 1000 4.5 0.4")
     q.add_argument("--crest", type=float, default=1.0,
                    help="base crest scale when the grid does not set it")
     q.add_argument("--bass", type=float, default=1.0,
@@ -720,7 +720,7 @@ def main(argv=None):
                    help="max broad deviation in 240-4000 Hz, dB (None = off)")
     q.add_argument("--eq-peak", type=float, nargs=3, default=None,
                    metavar=("HZ", "DB", "Q"),
-                   help="one broad bell applied before everything, e.g. 1000 4.5 0.4")
+                   help="one broad static bell after the crest stage, e.g. 1000 4.5 0.4")
     q.add_argument("--one-shot", action="store_true", dest="one_shot",
                    help="project the target contour once instead of iterating")
     q.add_argument("--pull", type=float, default=1.0,
