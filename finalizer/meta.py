@@ -6,8 +6,9 @@ a piece should sound. Inside the boundary the picture is yours.
 Four groups of numbers:
 
 1. CREST_MAX -- per octave band, how far a peak may rise above that band's own
-   body. Body = P75 of the band envelope; crest = P99.5 - P75. The v0.3.0
-   ceilings are codec-aware and include a 0.5 dB headroom buffer.
+   body. Body = P75 of the band envelope; crest = P99.5 - P75. Codec-aware
+   ceilings optimized for high-density -14 LUFS delivery (pure structural deltas,
+   free of artificial headroom buffers).
 2. CREST_MIN -- a craft floor. It is displayed but NOT enforced by the chain or
    by `check`: the chain does not add transients to meet it.
 3. LUFS / TP -- delivery conventions, not physical boundaries. Platform targets
@@ -38,9 +39,9 @@ CENTERS = [25.0, 31.5, 39.7, 50.0, 63.0, 79.4, 100.0, 126.0, 158.7, 200.0,
 
 CREST_EDGES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360, 20000]
 
-# v0.3.0 Codec-Optimized Crest Ceilings (includes 0.5 dB headroom safety buffer)
+# v0.3.0 Codec-Optimized Crest Ceilings for -14 LUFS (Buffer removed, +0.5 restored)
 # Bands: 30-60, 60-120, 120-240, 240-480, 480-960, 960-1920, 1920-3840, 3840-7680, 7680-15360, 15360-20000
-CREST_MAX = [4.5, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 9.5, 10.0]
+CREST_MAX = [5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.5, 10.0, 10.5]
 
 # Craft floor. Not enforced by the chain or by `check`: the chain does not add
 # transients to meet it.
@@ -50,7 +51,7 @@ LUFS = -14.0
 TP = -1.0
 MONO_BELOW = 120.0
 
-# The boundary has one name. The values are updated for v0.3.0 codec optimization.
+# The standard commercial streaming boundary.
 META = {
     "name": "meta",
     "metric_version": "crest-v0.3.0-codec-optimized",
@@ -76,13 +77,12 @@ def get(name=None):
     return META_REGISTRY.get(name or DEFAULT_META)
 
 NOTES = {
-    "crest_max": "v0.3.0 codec-optimized ceiling with 0.5 dB headroom buffer. "
-                 "Clamps sub-bass (30-60Hz at 4.5 dB) to prevent codec distortion, "
+    "crest_max": "v0.3.0 codec-optimized ceiling for -14 LUFS without artificial buffers. "
+                 "Clamps sub-bass (30-60Hz at 5.0 dB) to prevent codec distortion, "
                  "gradually opens up through the mids, and tapers high-end near the ~15k codec cut.",
     "crest_min": "Craft floor; reported by check/master, not enforced by the "
                  "chain. The chain does not add transients to meet it.",
-    "lufs": "Delivery convention, not a physical boundary; platform targets "
-            "differ (Spotify -14, Apple about -16, Deezer -15).",
+    "lufs": "Delivery convention (-14.0 LUFS streaming target).",
     "tp": "Delivery convention; measured on the larger of BS.1770-4 Annex 2 "
           "and a polyphase 4x meter. Name the meter in a report.",
     "mono_below": "High-pass corner; the side is attenuated, not zero. The "
@@ -111,7 +111,7 @@ def as_target(meta=None):
 
 def table(meta=None):
     meta = meta or META
-    lines = [f"  meta: {meta['name']}  "
+    lines = [f"  meta: {meta['name']} "
              f"(metric {meta.get('metric_version', 'unknown')}; v0.3.0 codec-optimized)",
              f"  {'band, Hz':>14s} {'ceiling':>8s} {'floor':>7s}"]
     for i, edge in enumerate(meta["crest_edges"][:-1]):

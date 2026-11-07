@@ -4,8 +4,8 @@ A final layer for sustained material: not matching someone else's record, but
 fitting an **admissible region** — a meta.
 
 The meta is a calibrated boundary: a set of admissible numbers, inside which the
-sound is yours. v0.3.0 tunes the band ceilings for lossy streaming codecs and
-keeps a 0.5 dB internal headroom buffer before the true-peak limiter.
+sound is yours. v0.3.0 tunes the band ceilings for lossy streaming codecs for
+high-density −14 LUFS delivery, without artificial headroom buffers.
 
 ![Choosing a file](docs/picker.png)
 
@@ -126,22 +126,21 @@ else.
 
 Four groups, and only these.
 
-**1. Crest ceiling per octave.** The v0.3.0 ceilings are codec-aware and
-include a 0.5 dB headroom buffer between the band target and the final
-true-peak limiter:
+**1. Crest ceiling per octave.** The v0.3.0 ceilings are codec-aware for
+−14 LUFS delivery (pure structural deltas, without artificial headroom buffers):
 
 | band, Hz | ceiling |
 |---|---|
-| 30–60 | 4.5 |
-| 60–120 | 5.5 |
-| 120–240 | 6.0 |
-| 240–480 | 6.5 |
-| 480–960 | 7.0 |
-| 960–1920 | 7.5 |
-| 1920–3840 | 8.0 |
-| 3840–7680 | 9.0 |
-| 7680–15360 | 9.5 |
-| 15360–20000 | 10.0 |
+| 30–60 | 5.0 |
+| 60–120 | 6.0 |
+| 120–240 | 6.5 |
+| 240–480 | 7.0 |
+| 480–960 | 7.5 |
+| 960–1920 | 8.0 |
+| 1920–3840 | 8.5 |
+| 3840–7680 | 9.5 |
+| 7680–15360 | 10.0 |
+| 15360–20000 | 10.5 |
 
 The sub-bass is clamped so transient energy cannot eat inter-sample headroom or
 push small playback systems into inter-modulation distortion. The midrange
@@ -231,7 +230,7 @@ free.
 
 | quantity | value | role |
 |---|---|---|
-| `K_b` | 4.5 → 10.0 dB | codec-aware crest ceiling; includes the 0.5 dB headroom buffer |
+| `K_b` | 5.0 → 10.5 dB | codec-aware crest ceiling for −14 LUFS, without artificial headroom buffers |
 | `F_b` | 2.5 → 5.0 | craft floor; reported, not auto-enforced |
 | `L₀` | −14 LUFS | delivery convention; platform targets differ |
 | `T₀` | −1 dBTP | delivery convention; meter-dependent |
@@ -375,8 +374,8 @@ midrange, that is a mastering defect.
 ## Limitations
 
 - **the meta is a design boundary, not a physical law.** It is calibrated for
-  lossy streaming playback and keeps a 0.5 dB internal headroom buffer; other
-  delivery contexts may want different ceilings;
+  lossy streaming playback at −14 LUFS; other delivery contexts may want
+  different ceilings;
 - **the crest estimator is 4096/1024 and does not resolve 30–60 Hz well.** Treat
   the lowest band as a trend, not a sample-accurate number;
 - **the side constraint is a high-pass, not an exact zero.** The side/mid and
